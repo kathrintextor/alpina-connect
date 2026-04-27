@@ -1,3 +1,9 @@
+> **Showcase-Projekt** — Kurs *AI Business Specialist (eidg. FA)*, Modul Requirements Engineering, HSO
+> Dieses Repository demonstriert den Einsatz von **Claude Code**, **VS Code**, **BMAD**, **Git** und **GitHub** im Requirements Engineering.
+> Neu hier? → [SETUP.md](SETUP.md) — Installationsanleitung für alle benötigten Tools
+
+---
+
 # Alpina Connect — Digitales Kundenportal
 
 **Auftraggeber:** Alpina Versicherungen AG
