@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpina Connect — Projektportal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Alpina Connect CI — Farbsystem ── */
+:root {
+  --ci-navy:    #1B3A6B;
+  --ci-navy-dk: #12285A;
+  --ci-red:     #C41230;
+  --ci-glacier: #F0F4F8;
+  --ci-ice:     #E8EEF6;
+  --ci-rock:    #1A2332;
+  --ci-mist:    #6B7C93;
+  --ci-border:  #D4DCE8;
+}
+</style>
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Dark Mode Farbvariablen ── */
+:root {
+  --dm-bg:       #0D1421;
+  --dm-surface:  #162035;
+  --dm-surface2: #1E2A42;
+  --dm-border:   #2D3D5C;
+  --dm-text:     #E2E8F0;
+  --dm-text2:    #94A3B8;
+  --dm-text3:    #6B7C93;
+  --dm-green-bg: #132A1A;
+  --dm-green-bd: #1D4A2D;
+  --dm-amber-bg: #2A2010;
+  --dm-amber-bd: #4A3A10;
+  --dm-purple-bg:#1E1A2E;
+  --dm-red-bg:   #2A1010;
+}
+
+/* ── Top Nav ── */
+.top-nav {
+  position: fixed; top: 0; left: 0; right: 0; height: 52px;
+  background: #1A2332; display: flex; align-items: center;
+  padding: 0 20px; gap: 24px; z-index: 500; border-bottom: 1px solid #2D3D5C;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; margin-right: 8px; }
+.nav-icon { width: 32px; height: 32px; flex-shrink: 0; }
+.nav-title { color: #e2e8f0; font-size: 14px; font-weight: 600;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.nav-sep { width: 1px; height: 24px; background: #334155; }
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab {
+  padding: 6px 14px; border-radius: 7px; border: none; background: transparent;
+  color: #94a3b8; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s; font-family: inherit;
+}
+.nav-tab:hover { background: #1E2A42; color: #e2e8f0; }
+.nav-tab.active { background: #1B3A6B; color: #fff; }
+.nav-right { margin-left: auto; color: #6B7C93; font-size: 11px; }
+
+/* ── Panels ── */
+.panel { display: none; position: fixed; top: 52px; left: 0; right: 0; bottom: 0; }
+.panel.active { display: block; }
+
+/* ── Slide Panel ── */
+#panel-slides {
+  background: #0D1421; overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.slides-wrap { position: relative; width: 100%; height: 100%; }
+.slide {
+  position: absolute; inset: 0; display: none; flex-direction: column;
+  padding: 48px 72px; background: #0D1421; opacity: 0; transition: opacity 0.25s;
+}
+.slide.active { display: flex; opacity: 1; }
+
+/* slide typography */
+.slide-label { font-size: 11px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: #6B7C93; margin-bottom: 6px; }
+h1 { font-size: 44px; font-weight: 700; line-height: 1.1; color: #E2E8F0; }
+h2 { font-size: 26px; font-weight: 700; color: #E2E8F0; margin-bottom: 20px; }
+p  { font-size: 15px; line-height: 1.6; color: #94A3B8; }
+
+.brand-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+.brand-icon { flex-shrink: 0; }
+.brand-name { font-size: 15px; font-weight: 600; color: #E2E8F0; }
+.brand-sub  { font-size: 11px; color: #6B7C93; }
+
+/* slide nav */
+.slide-nav { position: absolute; bottom: 24px; right: 28px; display: flex; gap: 8px; z-index: 10; }
+.slide-nav button {
+  width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: #2D3D5C; color: #E2E8F0; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background .2s;
+}
+.slide-nav button:hover { background: #C41230; }
+.slide-nav button:disabled { background: #1E2A42; color: #4A5A7A; cursor: default; }
+.slide-counter {
+  position: absolute; bottom: 32px; left: 28px;
+  font-size: 11px; color: #6B7C93; font-weight: 500; font-family: inherit;
+}
+.progress-bar {
+  position: absolute; top: 0; left: 0; height: 3px;
+  background: #C41230; transition: width .3s; z-index: 10;
+}
+
+/* ── slide-specific ── */
+.slide-title { background: linear-gradient(135deg,#0D1421 0%,#1B3A6B 100%); justify-content: center; }
+.slide-title h1 { color: #fff; font-size: 50px; margin-bottom: 14px; }
+.slide-title .subtitle { font-size: 18px; color: #A8C8E8; margin-bottom: 8px; }
+.slide-title .meta { font-size: 13px; color: #6B7C93; margin-top: 36px; }
+.slide-title .badge {
+  display: inline-block; background: rgba(27,58,107,.4);
+  border: 1px solid rgba(168,200,232,.3); color: #A8C8E8;
+  font-size: 11px; padding: 4px 12px; border-radius: 20px; margin-bottom: 28px;
+}
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+.card { background: #162035; border: 1px solid #2D3D5C; border-radius: 14px; padding: 24px; }
+.card.highlight { background: linear-gradient(135deg,#162035,#1E2A42); border-color: #1B3A6B; }
+.card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: #6B7C93; margin-bottom: 14px; }
+.card.highlight h3 { color: #A8C8E8; }
+.bullet { display: flex; gap: 9px; margin-bottom: 9px; align-items: flex-start; }
+.bullet-dot { width: 5px; height: 5px; background: #2D3D5C; border-radius: 50%; margin-top: 8px; flex-shrink: 0; }
+.card.highlight .bullet-dot { background: #A8C8E8; }
+.bullet p { font-size: 14px; color: #CBD5E1; }
+.card.highlight .bullet p { color: #CBD5E1; }
+
+.phases { display: flex; gap: 0; flex: 1; margin-top: 8px; }
+.phase { flex: 1; padding: 18px 14px; border-left: 3px solid #2D3D5C; }
+.phase:first-child { border-left: 3px solid #1B3A6B; }
+.phase-num { width: 26px; height: 26px; background: #1E2A42; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #6B7C93; margin-bottom: 9px; }
+.phase:first-child .phase-num { background: #1B3A6B; color: #fff; }
+.phase h3 { font-size: 12px; font-weight: 600; color: #E2E8F0; margin-bottom: 5px; }
+.phase p  { font-size: 11px; color: #6B7C93; line-height: 1.5; }
+.phase .tag { display: inline-block; margin-top: 7px; background: #1E2A42;
+  border-radius: 5px; font-size: 10px; font-weight: 600; color: #6B7C93; padding: 2px 7px; }
+
+.ctable { width: 100%; border-collapse: collapse; flex: 1; font-size: 13px; }
+.ctable th { text-align: left; padding: 9px 12px; background: #162035; color: #6B7C93;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 2px solid #2D3D5C; }
+.ctable td { padding: 10px 12px; border-bottom: 1px solid #1E2A42; vertical-align: top; color: #CBD5E1; }
+.ctable tr:last-child td { border-bottom: none; }
+.ctable td:first-child { font-weight: 600; color: #6B7C93; font-size: 11px; white-space: nowrap; }
+.badge-ok   { display: inline-block; background: #132A1A; color: #4ADE80; border-radius: 5px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
+.badge-open { display: inline-block; background: #2A2010; color: #FCD34D; border-radius: 5px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
+.insight-box { background: #2A2010; border: 1px solid #4A3A10; border-radius: 10px;
+  padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #FCD34D; }
+
+.stats-row { display: flex; gap: 14px; margin-bottom: 22px; }
+.stat-box { flex: 1; background: #162035; border: 1px solid #2D3D5C; border-radius: 10px; padding: 16px 18px; text-align: center; }
+.stat-num   { font-size: 28px; font-weight: 700; color: #A8C8E8; }
+.stat-label { font-size: 11px; color: #6B7C93; margin-top: 2px; }
+.highlights { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hl-item { background: #162035; border-left: 3px solid #1B3A6B; border-radius: 0 9px 9px 0; padding: 10px 14px; }
+.hl-item .id { font-size: 10px; font-weight: 700; color: #A8C8E8; font-family: monospace; }
+.hl-item p   { font-size: 12px; color: #CBD5E1; margin-top: 2px; }
+
+.screens-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; flex: 1; }
+.sc-card { background: #162035; border: 1px solid #2D3D5C; border-radius: 10px; padding: 16px; }
+.sc-card .icon { font-size: 22px; margin-bottom: 7px; }
+.sc-card h3  { font-size: 13px; font-weight: 600; color: #E2E8F0; margin-bottom: 3px; }
+.sc-card p   { font-size: 10px; color: #6B7C93; font-family: monospace; }
+.tech-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.tech-badge { background: #1B3A6B; color: #E2E8F0; border-radius: 5px; padding: 3px 10px; font-size: 11px; font-weight: 500; font-family: monospace; }
+
+.trace-flow { display: flex; gap: 14px; align-items: stretch; flex: 1; }
+.trace-box { flex: 1; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
+.trace-box.req  { background: #162035; border: 1px solid #2D3D5C; }
+.trace-box.code { background: #132A1A; border: 1px solid #1D4A2D; }
+.trace-arrow { display: flex; align-items: center; font-size: 24px; color: #6B7C93; padding: 0 2px; }
+.trace-box h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+.trace-box.req  h3 { color: #A8C8E8; }
+.trace-box.code h3 { color: #4ADE80; }
+.req-id   { font-family: monospace; font-size: 12px; font-weight: 700; color: #A8C8E8; margin-bottom: 7px; }
+.req-text { font-size: 13px; color: #CBD5E1; line-height: 1.5; }
+pre { background: #0D1421; border: 1px solid #2D3D5C; border-radius: 9px; padding: 14px; font-size: 11px; line-height: 1.7; overflow-x: auto; flex: 1; }
+.cc { color: #6B7C93; } .ck { color: #38bdf8; } .cs { color: #86efac; } .cn { color: #fbbf24; }
+.trace-result { background: #132A1A; border: 1px solid #4ADE80; border-radius: 9px;
+  padding: 12px 16px; margin-top: 14px; font-size: 13px; color: #4ADE80; font-weight: 600; }
+
+.achieved-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.ach-item { display: flex; gap: 10px; align-items: flex-start; background: #132A1A;
+  border: 1px solid #1D4A2D; border-radius: 10px; padding: 12px 14px; }
+.ach-icon { font-size: 17px; flex-shrink: 0; }
+.ach-item h3 { font-size: 13px; font-weight: 600; color: #4ADE80; margin-bottom: 2px; }
+.ach-item p  { font-size: 11px; color: #4ADE80; opacity: .7; }
+.learning-box { background: #162035; border: 1px solid #2D3D5C; border-radius: 12px; padding: 20px 24px;
+  font-size: 15px; color: #CBD5E1; line-height: 1.6; font-style: italic; }
+.learning-box strong { color: #A8C8E8; font-style: normal; }
+
+/* ── Document Panel ── */
+.doc-panel { overflow-y: auto; background: #0D1421; }
+.doc-content {
+  max-width: 900px; margin: 0 auto; padding: 40px 48px 80px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.doc-content h1 { font-size: 28px; font-weight: 700; color: #E2E8F0; margin-bottom: 6px; border-bottom: 2px solid #1B3A6B; padding-bottom: 12px; margin-top: 32px; }
+.doc-content h1:first-child { margin-top: 0; }
+.doc-content h2 { font-size: 20px; font-weight: 700; color: #CBD5E1; margin: 32px 0 12px; }
+.doc-content h3 { font-size: 15px; font-weight: 600; color: #94A3B8; margin: 20px 0 8px; }
+.doc-content p  { font-size: 14px; color: #94A3B8; line-height: 1.7; margin-bottom: 10px; }
+.doc-content ul { padding-left: 20px; margin-bottom: 12px; }
+.doc-content li { font-size: 14px; color: #94A3B8; line-height: 1.7; margin-bottom: 4px; }
+.doc-meta { background: #162035; border: 1px solid #2D3D5C; border-radius: 10px;
+  padding: 16px 20px; margin-bottom: 28px; display: flex; gap: 24px; flex-wrap: wrap; }
+.doc-meta-item label { font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .08em; color: #6B7C93; display: block; margin-bottom: 2px; }
+.doc-meta-item span  { font-size: 13px; font-weight: 600; color: #E2E8F0; }
+.doc-meta-item span.final { color: #4ADE80; }
+
+/* doc tables */
+.doc-table-wrap { overflow-x: auto; margin: 12px 0 20px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table th { background: #162035; color: #6B7C93; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em; padding: 9px 12px;
+  text-align: left; border-bottom: 2px solid #2D3D5C; white-space: nowrap; }
+table td { padding: 9px 12px; border-bottom: 1px solid #1E2A42; color: #CBD5E1;
+  vertical-align: top; line-height: 1.5; }
+table tr:last-child td { border-bottom: none; }
+table tr:hover td { background: #1E2A42; }
+.fa-id  { font-family: monospace; font-weight: 700; color: #A8C8E8; white-space: nowrap; }
+.nfa-id { font-family: monospace; font-weight: 700; color: #A78BFA; white-space: nowrap; }
+.w-id   { font-family: monospace; font-weight: 700; color: #38BDF8; white-space: nowrap; }
+.a-id   { font-family: monospace; font-weight: 700; color: #4ADE80; white-space: nowrap; }
+.l-id   { font-family: monospace; font-weight: 700; color: #FCA5A5; white-space: nowrap; }
+.prio-pflicht { background: rgba(27,58,107,.5); color: #A8C8E8; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.prio-phase2  { background: #2A2010; color: #FCD34D; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.status-ok   { background: #132A1A; color: #4ADE80; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+.status-open { background: #2A2010; color: #FCD34D; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+.status-fix  { background: #1E1A2E; color: #A78BFA; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+.status-crit { background: #2A1010; color: #FCA5A5; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 600; }
+blockquote { border-left: 3px solid #1B3A6B; background: #162035; padding: 12px 16px;
+  border-radius: 0 8px 8px 0; margin: 12px 0 16px; }
+blockquote p { color: #A8C8E8; margin-bottom: 0; font-size: 13px; }
+.doc-section { background: #162035; border: 1px solid #2D3D5C; border-radius: 12px;
+  padding: 24px 28px; margin-bottom: 20px; }
+.section-num { display: inline-block; background: #1B3A6B; color: #fff;
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; margin-right: 8px; }
+.badge-w-ok   { background: #132A1A; color: #4ADE80; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.badge-w-open { background: #2A2010; color: #FCD34D; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.badge-w-fix  { background: #1E1A2E; color: #A78BFA; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.badge-w-crit { background: #2A1010; color: #FCA5A5; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+.w-card { background: #162035; border: 1px solid #2D3D5C; border-radius: 12px; padding: 22px 26px; margin-bottom: 18px; }
+.w-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.w-num { font-size: 18px; font-weight: 700; color: #E2E8F0; font-family: monospace; }
+.w-title { font-size: 15px; font-weight: 600; color: #CBD5E1; }
+.w-meta { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.w-body p { font-size: 13px; color: #94A3B8; margin-bottom: 8px; line-height: 1.6; }
+.w-decision { background: #132A1A; border: 1px solid #1D4A2D; border-radius: 8px; padding: 12px 16px; margin-top: 10px; }
+.w-decision .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #4ADE80; margin-bottom: 4px; }
+.w-decision p { font-size: 13px; color: #4ADE80; margin: 0; }
+.w-open { background: #2A2010; border: 1px solid #4A3A10; border-radius: 8px; padding: 12px 16px; margin-top: 10px; }
+.w-open .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #FCD34D; margin-bottom: 4px; }
+.w-open p { font-size: 13px; color: #FCD34D; margin: 0; }
+.w-impact { margin-top: 8px; font-size: 12px; color: #6B7C93; }
+.w-impact strong { color: #94A3B8; }
+.note-box { background: #2A2010; border: 1px solid #4A3A10; border-radius: 8px; padding: 10px 14px; margin: 10px 0 4px; font-size: 12px; color: #FCD34D; font-style: italic; }
+
+/* ── Prototype Panel ── */
+#panel-prototype { background: #1A2332; }
+#panel-prototype.active { display: flex; align-items: center; justify-content: center; }
+
+/* ── Scrollbar ── */
+.doc-panel::-webkit-scrollbar { width: 6px; }
+.doc-panel::-webkit-scrollbar-track { background: #162035; }
+.doc-panel::-webkit-scrollbar-thumb { background: #2D3D5C; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     TOP NAVIGATION
+═══════════════════════════════════════════ -->
+<nav class="top-nav">
+  <div class="nav-logo">
+    <svg class="nav-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="32" height="32" rx="7" fill="#1B3A6B"/>
+      <path d="M5 25 L16 7 L27 25" fill="none" stroke="white" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <line x1="10" y1="19" x2="22" y2="19" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+      <polygon points="16,7 13,12.5 19,12.5" fill="#C41230"/>
+    </svg>
+    <span class="nav-title">Alpina Connect</span>
+  </div>
+  <div class="nav-sep"></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPanel(this,'slides')">Präsentation</button>
+    <button class="nav-tab" onclick="switchPanel(this,'lastenheft')">Lastenheft</button>
+    <button class="nav-tab" onclick="switchPanel(this,'widerspruch')">Widersprüche</button>
+    <button class="nav-tab" onclick="switchPanel(this,'prototype')">Prototyp</button>
+  </div>
+  <div class="nav-right">RE-Gruppenaufgabe · Kathrin · 17. April 2026</div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 1 — PRÄSENTATION
+═══════════════════════════════════════════ -->
+<div class="panel active" id="panel-slides">
+<div class="slides-wrap">
+  <div class="progress-bar" id="progress"></div>
+
+  <!-- S1 Titel -->
+  <div class="slide slide-title active" id="s1">
+    <div style="max-width:680px;">
+      <div style="display:flex;align-items:center;gap:13px;margin-bottom:44px;">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#1B3A6B"/><path d="M8 38 L24 10 L40 38" fill="none" stroke="white" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><line x1="15" y1="28" x2="33" y2="28" stroke="white" stroke-width="3.5" stroke-linecap="round"/><polygon points="24,10 19.5,18 28.5,18" fill="#C41230"/></svg>
+        <div><div class="brand-name" style="color:#e2e8f0;font-size:16px;">Alpina Connect</div><div class="brand-sub">Alpina Versicherungen AG</div></div>
+      </div>
+      <div class="badge">Requirements Engineering &amp; Prototyp — April 2026</div>
+      <h1>Digitales Kundenportal<br>für Schadenmeldungen</h1>
+      <p class="subtitle" style="margin-top:18px;">Von chaotischen Quelldokumenten zum lauffähigen Prototyp</p>
+      <p class="meta">Kathrin &nbsp;·&nbsp; RE-Gruppenaufgabe &nbsp;·&nbsp; 17. April 2026</p>
+    </div>
+  </div>
+
+  <!-- S2 Ausgangslage -->
+  <div class="slide" id="s2">
+    <div class="brand-bar"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-icon"><rect width="36" height="36" rx="9" fill="#1B3A6B"/><path d="M6 28 L18 8 L30 28" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><line x1="11" y1="21" x2="25" y2="21" stroke="white" stroke-width="3" stroke-linecap="round"/><polygon points="18,8 14.5,14 21.5,14" fill="#C41230"/></svg><div><div class="brand-name">Alpina Connect</div><div class="brand-sub">Ausgangslage &amp; Problem</div></div></div>
+    <h2>Warum braucht Alpina dieses Portal?</h2>
+    <div class="two-col">
+      <div class="card">
+        <h3>Heute — Ist-Situation</h3>
+        <div class="bullet"><div class="bullet-dot"></div><p>Schadensmeldungen nur per Telefon oder E-Mail</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p>Medienbrüche bei jeder Übergabe ans interne System</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p>Manuelle Erfassung durch Support — fehleranfällig</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p>Keine Statustransparenz für Kunden</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p>Erreichbarkeit nur während Bürozeiten</p></div>
+      </div>
+      <div class="card highlight">
+        <h3>Ziel — Alpina Connect</h3>
+        <div class="bullet"><div class="bullet-dot"></div><p>Webportal für digitale Schadenmeldung 24/7</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p>Strukturierter Dokumentenupload (Fotos, PDFs)</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p>Statusverfolgung — jederzeit einsehbar</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p>Automatische Eingangsbestätigung mit Schadensnummer</p></div>
+        <div class="bullet"><div class="bullet-dot"></div><p style="font-style:italic;color:#A8C8E8;">"Kontrolle in einem unkontrollierbaren Moment"</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 Vorgehen -->
+  <div class="slide" id="s3">
+    <div class="brand-bar"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-icon"><rect width="36" height="36" rx="9" fill="#1B3A6B"/><path d="M6 28 L18 8 L30 28" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><line x1="11" y1="21" x2="25" y2="21" stroke="white" stroke-width="3" stroke-linecap="round"/><polygon points="18,8 14.5,14 21.5,14" fill="#C41230"/></svg><div><div class="brand-name">Alpina Connect</div><div class="brand-sub">Vorgehen &amp; GenAI-Einsatz</div></div></div>
+    <h2>5-Phasen-Ansatz mit BMAD-Framework</h2>
+    <div class="phases">
+      <div class="phase"><div class="phase-num">1</div><h3>Quelldokument-Analyse</h3><p>4 Dokumente, 3 Perspektiven — Management, Fachbereich, IT</p><span class="tag">Mary</span></div>
+      <div class="phase"><div class="phase-num">2</div><h3>PRD (Zwischenergebnis)</h3><p>Konsolidierung aller Quellen in strukturiertes Product Requirements Document</p><span class="tag">John</span></div>
+      <div class="phase"><div class="phase-num">3</div><h3>Widerspruchskatalog</h3><p>9 Widersprüche direkt aus Rohtexten — unabhängig vom PRD</p><span class="tag">Mary</span></div>
+      <div class="phase"><div class="phase-num">4</div><h3>Lastenheft</h3><p>48 Anforderungen aus PRD + Widerspruchsentscheiden synthetisiert</p><span class="tag">John + Paige</span></div>
+      <div class="phase"><div class="phase-num">5</div><h3>Prototyp</h3><p>React + Vite + Tailwind CSS, 6 Screens, Traceability im Code</p><span class="tag">Amelia</span></div>
+    </div>
+    <div style="margin-top:18px;font-size:12px;color:#64748b;">GenAI-Beitrag ca. 70–80% &nbsp;·&nbsp; Menschliche Validierung: Compliance, Entscheidungen, Browser-Tests</div>
+  </div>
+
+  <!-- S4 Widersprüche -->
+  <div class="slide" id="s4">
+    <div class="brand-bar"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-icon"><rect width="36" height="36" rx="9" fill="#1B3A6B"/><path d="M6 28 L18 8 L30 28" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><line x1="11" y1="21" x2="25" y2="21" stroke="white" stroke-width="3" stroke-linecap="round"/><polygon points="18,8 14.5,14 21.5,14" fill="#C41230"/></svg><div><div class="brand-name">Alpina Connect</div><div class="brand-sub">Widerspruchskatalog — 9 Konflikte</div></div></div>
+    <h2>Highlights aus dem Widerspruchskatalog</h2>
+    <table class="ctable">
+      <thead><tr><th>ID</th><th>Thema</th><th>Aussage A</th><th>Aussage B</th><th>Entscheidung</th></tr></thead>
+      <tbody>
+        <tr><td>W-03</td><td>Upload-Limit</td><td>Fachbereich: 5 MB</td><td>IT: 10 MB · FB: 50 MB</td><td><span class="badge-ok">10 MB (IT)</span></td></tr>
+        <tr><td>W-04</td><td>Statusupdates</td><td>Business: Echtzeit</td><td>IT: technisch nicht möglich</td><td><span class="badge-ok">Batch täglich</span></td></tr>
+        <tr><td>W-02a</td><td>Login</td><td>Fachbereich: kein Login</td><td>Security: SSO zwingend</td><td><span class="badge-ok">SSO Pflicht</span></td></tr>
+        <tr><td>W-09</td><td>Datenschutz</td><td>Alle Docs: "DSGVO"</td><td>Schweizer Unternehmen → DSG</td><td><span class="badge-ok">DSG ✓ korrigiert</span></td></tr>
+        <tr><td>W-07</td><td>Verarbeitung</td><td>FB: vollautomatisch</td><td>FB: alles manuell prüfen</td><td><span class="badge-open">Offen — Hybrid</span></td></tr>
+      </tbody>
+    </table>
+    <div class="insight-box">Wichtigste Erkenntnis: Quelldokumente zeigen fehlende abteilungsübergreifende Abstimmung — W-02b und W-07 entstammen beide dem <em>gleichen</em> Dokument (Fachbereich). Klassisches RE-Problem.</div>
+  </div>
+
+  <!-- S5 Lastenheft -->
+  <div class="slide" id="s5">
+    <div class="brand-bar"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-icon"><rect width="36" height="36" rx="9" fill="#1B3A6B"/><path d="M6 28 L18 8 L30 28" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><line x1="11" y1="21" x2="25" y2="21" stroke="white" stroke-width="3" stroke-linecap="round"/><polygon points="18,8 14.5,14 21.5,14" fill="#C41230"/></svg><div><div class="brand-name">Alpina Connect</div><div class="brand-sub">Lastenheft v1.0 — Final</div></div></div>
+    <h2>Lastenheft — Struktur &amp; Qualität</h2>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num">8</div><div class="stat-label">Pflichtabschnitte</div></div>
+      <div class="stat-box"><div class="stat-num">29</div><div class="stat-label">Funkt. Anforderungen</div></div>
+      <div class="stat-box"><div class="stat-num">19</div><div class="stat-label">Nicht-funkt. Anforderungen</div></div>
+      <div class="stat-box"><div class="stat-num">7</div><div class="stat-label">Offene Lücken</div></div>
+    </div>
+    <div class="highlights">
+      <div class="hl-item"><div class="id">FA-12</div><p>Upload max. 10 MB · client- und serverseitig (W-03)</p></div>
+      <div class="hl-item"><div class="id">FA-24</div><p>DSG-konforme Datenschutz-Checkbox bei Registrierung (W-09)</p></div>
+      <div class="hl-item"><div class="id">NFA-10</div><p>Systemverfügbarkeit ≥ 99.5% (exkl. Wartungsfenster)</p></div>
+      <div class="hl-item"><div class="id">NFA-14</div><p>Schweizer DSG rev. 2023 — nicht DSGVO (W-09 korrigiert)</p></div>
+    </div>
+    <p style="margin-top:16px;font-size:12px;color:#94a3b8;">Jede Anforderung: eindeutige ID · messbares Akzeptanzkriterium · Quellenangabe · ✅/⚙️ Notation</p>
+  </div>
+
+  <!-- S6 Prototyp -->
+  <div class="slide" id="s6">
+    <div class="brand-bar"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-icon"><rect width="36" height="36" rx="9" fill="#1B3A6B"/><path d="M6 28 L18 8 L30 28" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><line x1="11" y1="21" x2="25" y2="21" stroke="white" stroke-width="3" stroke-linecap="round"/><polygon points="18,8 14.5,14 21.5,14" fill="#C41230"/></svg><div><div class="brand-name">Alpina Connect</div><div class="brand-sub">Prototyp — 6 Screens</div></div></div>
+    <h2>Lauffähige React-Webapplikation</h2>
+    <div class="screens-grid">
+      <div class="sc-card"><div class="icon">🔐</div><h3>Login &amp; Registrierung</h3><p>FA-01, FA-02, FA-24, FA-29</p></div>
+      <div class="sc-card"><div class="icon">📱</div><h3>2FA (SMS-Mock)</h3><p>FA-02, NFA-05 · 5-Versuch-Sperre</p></div>
+      <div class="sc-card"><div class="icon">📊</div><h3>Dashboard</h3><p>FA-04, FA-05, FA-10, FA-18</p></div>
+      <div class="sc-card"><div class="icon">📋</div><h3>Schadenmeldung</h3><p>FA-06, FA-07, FA-11–FA-14</p></div>
+      <div class="sc-card"><div class="icon">✓</div><h3>Eingangsbestätigung</h3><p>FA-08, FA-09, FA-16</p></div>
+      <div class="sc-card"><div class="icon">🔍</div><h3>Statusübersicht</h3><p>FA-10, FA-18, FA-21</p></div>
+    </div>
+    <div class="tech-row">
+      <span class="tech-badge">React 18</span><span class="tech-badge">Vite</span>
+      <span class="tech-badge">Tailwind CSS</span><span class="tech-badge">Responsive</span>
+      <span class="tech-badge">Kein Backend</span><span class="tech-badge">Build: 275ms</span>
+    </div>
+  </div>
+
+  <!-- S7 Traceability -->
+  <div class="slide" id="s7">
+    <div class="brand-bar"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-icon"><rect width="36" height="36" rx="9" fill="#1B3A6B"/><path d="M6 28 L18 8 L30 28" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><line x1="11" y1="21" x2="25" y2="21" stroke="white" stroke-width="3" stroke-linecap="round"/><polygon points="18,8 14.5,14 21.5,14" fill="#C41230"/></svg><div><div class="brand-name">Alpina Connect</div><div class="brand-sub">Traceability</div></div></div>
+    <h2>Lastenheft → Code — direkte Nachvollziehbarkeit</h2>
+    <div class="trace-flow">
+      <div class="trace-box req">
+        <h3>Lastenheft — FA-12</h3>
+        <div class="req-id">FA-12</div>
+        <p class="req-text">„Das System validiert Dateigrösse (max. 10 MB) und Dateiformat (JPG, PNG, PDF) vor dem Upload client- und serverseitig."</p>
+        <br><p style="font-size:12px;color:#A8C8E8;"><strong>Akzeptanzkriterium:</strong> Upload abgelehnt bei &gt; 10 MB oder ungültigem Format — mit verständlicher Fehlermeldung.</p>
+        <br><p style="font-size:12px;color:#64748b;"><strong>Quelle:</strong> IT Infrastruktur (W-03 entschieden)</p>
+      </div>
+      <div class="trace-arrow">→</div>
+      <div class="trace-box code">
+        <h3>ClaimFormPage.jsx</h3>
+        <pre><code><span class="cc">// FA-12, FA-13: Datei-Validierung</span>
+<span class="cc">// W-03: 10 MB (Kompromiss 5/10/50)</span>
+
+<span class="ck">const</span> MAX_FILE_SIZE =
+  <span class="cn">10</span> * <span class="cn">1024</span> * <span class="cn">1024</span>
+
+<span class="ck">const</span> ALLOWED_TYPES = [
+  <span class="cs">'image/jpeg'</span>,
+  <span class="cs">'image/png'</span>,
+  <span class="cs">'application/pdf'</span>
+]</code></pre>
+      </div>
+    </div>
+    <div class="trace-result">→ Linie: Quelldok. (W-03) → Widerspruchskatalog → Lastenheft (FA-12) → Code (ClaimFormPage.jsx:14–15)</div>
+  </div>
+
+  <!-- S8 Fazit -->
+  <div class="slide" id="s8">
+    <div class="brand-bar"><svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-icon"><rect width="36" height="36" rx="9" fill="#1B3A6B"/><path d="M6 28 L18 8 L30 28" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><line x1="11" y1="21" x2="25" y2="21" stroke="white" stroke-width="3" stroke-linecap="round"/><polygon points="18,8 14.5,14 21.5,14" fill="#C41230"/></svg><div><div class="brand-name">Alpina Connect</div><div class="brand-sub">Fazit &amp; Learnings</div></div></div>
+    <h2>Erreichtes &amp; wichtigstes Learning</h2>
+    <div class="achieved-grid">
+      <div class="ach-item"><div class="ach-icon">📄</div><div><h3>Vollständiges Lastenheft</h3><p>8 Abschnitte · 29 FA · 19 NFA · 7 Lücken dokumentiert</p></div></div>
+      <div class="ach-item"><div class="ach-icon">⚡</div><div><h3>Widerspruchskatalog</h3><p>9 Widersprüche · 7 entschieden · 2 offen (W-02b, W-07)</p></div></div>
+      <div class="ach-item"><div class="ach-icon">💻</div><div><h3>Lauffähiger Prototyp</h3><p>6 Screens · 22 FA abgedeckt · Traceability im Code</p></div></div>
+      <div class="ach-item"><div class="ach-icon">📝</div><div><h3>Vorgehenskonzept + GenAI</h3><p>3-Stufen-Analysekette · 70–80% GenAI-Anteil dokumentiert</p></div></div>
+    </div>
+    <div class="learning-box">
+      Wichtigstes Learning: <strong>Widersprüche in Quelldokumenten sind kein Fehler — sie sind die eigentliche Aufgabe des Requirements Engineering.</strong><br><br>
+      GenAI-Fazit: Stark bei Struktur, Analyse und Code. Unersetzlich: menschliches Urteil bei Compliance, Prioritäten und strategischen Entscheiden.
+    </div>
+  </div>
+
+  <div class="slide-counter" id="counter">1 / 8</div>
+  <div class="slide-nav">
+    <button id="prev" onclick="go(-1)" disabled>&#8592;</button>
+    <button id="next" onclick="go(+1)">&#8594;</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 2 — LASTENHEFT
+═══════════════════════════════════════════ -->
+<div class="panel doc-panel" id="panel-lastenheft">
+<div class="doc-content">
+
+  <h1>Lastenheft — Alpina Connect</h1>
+  <p style="color:#64748b;margin-bottom:20px;">Kundenportal für digitale Schadenmeldung</p>
+
+  <div class="doc-meta">
+    <div class="doc-meta-item"><label>Auftraggeber</label><span>Alpina Versicherungen AG</span></div>
+    <div class="doc-meta-item"><label>Autorin</label><span>Kathrin</span></div>
+    <div class="doc-meta-item"><label>Datum</label><span>17. April 2026</span></div>
+    <div class="doc-meta-item"><label>Version</label><span>1.0</span></div>
+    <div class="doc-meta-item"><label>Status</label><span class="final">Final — freigegeben zur Abgabe</span></div>
+  </div>
+
+  <div class="doc-section">
+    <h2><span class="section-num">1</span>Einleitung und Zielsetzung</h2>
+    <h3>1.1 Ausgangslage</h3>
+    <p>Die Alpina Versicherungen AG ist ein mittelgrosser Schweizer Versicherer mit Fokus auf Kranken- und Zusatzversicherungen. Schadensfälle werden aktuell überwiegend telefonisch oder per E-Mail gemeldet, was zu Medienbrüchen, langen Bearbeitungszeiten, fehlender Statustransparenz und hohem manuellen Aufwand führt.</p>
+    <h3>1.2 Zielsetzung</h3>
+    <p>Mit <strong>Alpina Connect</strong> soll eine responsive Webapplikation entwickelt werden, die Privatkunden ermöglicht, Schadensfälle eigenständig online zu erfassen, Dokumente digital hochzuladen und den Bearbeitungsstatus jederzeit einzusehen.</p>
+    <h3>1.3 Erfolgskriterien</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>Kriterium</th><th>Zielwert</th><th>Messzeitpunkt</th></tr></thead>
+      <tbody>
+        <tr><td>Schadenmeldung abschliessen</td><td>80% der Kunden in &lt; 5 Min</td><td>6 Monate nach Launch</td></tr>
+        <tr><td>Eingangsbestätigung</td><td>Innerhalb 5 Min nach Einreichung</td><td>Ab Tag 1</td></tr>
+        <tr><td>Digitale Meldungsquote</td><td>≥ 60% aller Meldungen</td><td>6 Monate nach Launch</td></tr>
+        <tr><td>Reduktion Telefonmeldungen</td><td>≥ 40%</td><td>6 Monate nach Launch</td></tr>
+        <tr><td>Systemverfügbarkeit</td><td>≥ 99.5%</td><td>Laufend</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="doc-section">
+    <h2><span class="section-num">2</span>Stakeholder</h2>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>Rolle</th><th>Typ</th><th>Interesse / Erwartung</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Privatkunden</strong></td><td>Primärer Nutzer</td><td>Einfache, schnelle Schadenmeldung; Statustransparenz; kein Telefonieren</td></tr>
+        <tr><td><strong>Sachbearbeiter (intern)</strong></td><td>Sekundärer Nutzer</td><td>Strukturierte Eingangsdaten; keine Rückfragen; Systemintegration</td></tr>
+        <tr><td><strong>Support-Mitarbeitende</strong></td><td>Sekundärer Nutzer</td><td>Schneller Zugriff auf Fälle nach Schadensnummer</td></tr>
+        <tr><td><strong>Management</strong></td><td>Auftraggeber</td><td>Effizienzsteigerung; Kostenreduktion; Digitalisierungsstrategie</td></tr>
+        <tr><td><strong>IT / Architektur</strong></td><td>Technischer Stakeholder</td><td>Microservice-Architektur; Schweizer Hosting; Bestandssystem-Integration</td></tr>
+        <tr><td><strong>Security Team</strong></td><td>Regulatorischer Stakeholder</td><td>SSO-Login; kein anonymer Zugriff; Datensicherheit</td></tr>
+        <tr><td><strong>Compliance / Rechtsabteilung</strong></td><td>Regulatorischer Stakeholder</td><td>DSG-Konformität; Datenhaltung Schweiz</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="doc-section">
+    <h2><span class="section-num">4</span>Funktionale Anforderungen</h2>
+    <blockquote><p>Pflicht = muss in Phase 1 umgesetzt werden &nbsp;|&nbsp; Phase 2 = geplant für spätere Ausbaustufe &nbsp;|&nbsp; ✅ quellenbasiert &nbsp;|&nbsp; ⚙️ Annahme</p></blockquote>
+
+    <h3>4.1 Nutzerverwaltung</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Anforderung</th><th>Prio</th><th>Quelle</th><th>Akzeptanzkriterium</th></tr></thead>
+      <tbody>
+        <tr><td class="fa-id">FA-01</td><td>Das System ermöglicht einem Kunden die Registrierung mit E-Mail-Adresse und Passwort.</td><td><span class="prio-pflicht">Pflicht</span></td><td>Business Vision, Fachbereich</td><td>Registrierung in ≤ 3 Schritten. Bestätigungs-E-Mail innerhalb 2 Min.</td></tr>
+        <tr><td class="fa-id">FA-02</td><td>Das System ermöglicht dem Kunden die Anmeldung mit E-Mail, Passwort und 2FA (SMS-Code).</td><td><span class="prio-pflicht">Pflicht</span></td><td>Security Team, Fachbereich (W-02c)</td><td>Login schlägt ohne korrekten SMS-Code fehl. Sperre nach 5 Fehlversuchen (15 Min).</td></tr>
+        <tr><td class="fa-id">FA-03</td><td>Das System ermöglicht dem Kunden das Zurücksetzen seines Passworts über einen per E-Mail zugestellten Link.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR3</td><td>Reset-Link läuft nach 30 Min ab. Neues Passwort: ≥ 8 Zeichen, 1 Ziffer.</td></tr>
+        <tr><td class="fa-id">FA-04</td><td>Das System beendet eine aktive Session nach 30 Minuten Inaktivität automatisch.</td><td><span class="prio-pflicht">Pflicht</span></td><td>Security Team</td><td>Session-Token nach 30 Min ungültig. Nutzer wird zur Login-Seite weitergeleitet.</td></tr>
+        <tr><td class="fa-id">FA-05</td><td>Der Kunde kann sich manuell ausloggen.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR5</td><td>Nach Logout ist Session-Token invalidiert. Zurück-Navigation zeigt Login-Seite.</td></tr>
+      </tbody>
+    </table></div>
+    <blockquote><p><strong>Hinweis zu FA-01 (W-02b):</strong> Dok. 2 enthält gleichzeitig „Registrierung nur über Support" und „Kunde soll sich jederzeit selbst registrieren können". Entscheidung für Selbstregistrierung: Skalierbarkeit und UX überwiegen. Finale Bestätigung durch Fachbereich ausstehend (→ L-02).</p></blockquote>
+
+    <h3>4.2 Schadenmeldung</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Anforderung</th><th>Prio</th><th>Quelle</th><th>Akzeptanzkriterium</th></tr></thead>
+      <tbody>
+        <tr><td class="fa-id">FA-06</td><td>Der Kunde kann eine Schadenmeldung mit Schadensart, Datum, Ort und Beschreibung erfassen.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR6, Fachbereich</td><td>Alle Pflichtfelder validiert. Formular einreichbar wenn alle Pflichtfelder korrekt.</td></tr>
+        <tr><td class="fa-id">FA-07</td><td>Der Kunde kann eine begonnene Meldung vor dem Absenden prüfen und korrigieren (Vorschau-Schritt).</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR7</td><td>Vorschau zeigt alle Daten. Bearbeitung einzelner Felder möglich ohne Datenverlust.</td></tr>
+        <tr><td class="fa-id">FA-08</td><td>Nach Einreichung erhält der Kunde eine eindeutige Schadensnummer und Eingangsbestätigung.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR8</td><td>Schadensnummer auf Bestätigungsseite angezeigt. E-Mail innerhalb 5 Min.</td></tr>
+        <tr><td class="fa-id">FA-09</td><td>Das System verknüpft die Meldung automatisch mit der Versicherungspolice des eingeloggten Kunden.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR9</td><td>Police-Nummer in Meldungsdetailansicht sichtbar und korrekt zugeordnet.</td></tr>
+        <tr><td class="fa-id">FA-10</td><td>Der Kunde kann den Status aller eigenen Meldungen in einer Übersicht einsehen.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR10, FR18</td><td>Statusübersicht zeigt alle Meldungen (Eingegangen / In Bearbeitung / Abgeschlossen). Max. 24h veraltet.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.3 Dokumentenverwaltung</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Anforderung</th><th>Prio</th><th>Quelle</th><th>Akzeptanzkriterium</th></tr></thead>
+      <tbody>
+        <tr><td class="fa-id">FA-11</td><td>Der Kunde kann Dokumente (JPG, PNG, PDF) zu einer Schadenmeldung hochladen.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR11</td><td>Upload erfolgreich bei gültigem Format und Grösse. Datei danach in Meldungsansicht sichtbar.</td></tr>
+        <tr><td class="fa-id">FA-12</td><td>Das System validiert Dateigrösse (max. 10 MB) und Dateiformat (JPG, PNG, PDF) client- und serverseitig.</td><td><span class="prio-pflicht">Pflicht</span></td><td>IT Infrastruktur (W-03: 10 MB)</td><td>Upload abgelehnt mit verständlicher Fehlermeldung bei &gt; 10 MB oder ungültigem Format.</td></tr>
+        <tr><td class="fa-id">FA-13</td><td>Bei ungültigem Upload zeigt das System eine Fehlermeldung mit konkreter Handlungsanweisung.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR15</td><td>Fehlermeldung enthält Dateiname, Grund und konkrete Handlungsanweisung.</td></tr>
+        <tr><td class="fa-id">FA-14</td><td>Der Kunde kann Dokumente direkt per Gerätekamera (Browser-API) aufnehmen und hochladen.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR14</td><td>Kamera-Upload funktioniert auf Chrome Mobile (Android) und Safari Mobile (iOS).</td></tr>
+        <tr><td class="fa-id">FA-15</td><td>Das System prüft hochgeladene Dateien serverseitig auf Schadsoftware vor der Speicherung.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD (Security)</td><td>Infizierte Dateien werden abgelehnt und nicht gespeichert. Kunde erhält Fehlermeldung.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.4 Statusverfolgung und Benachrichtigungen</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Anforderung</th><th>Prio</th><th>Quelle</th><th>Akzeptanzkriterium</th></tr></thead>
+      <tbody>
+        <tr><td class="fa-id">FA-16</td><td>Der Kunde erhält nach Einreichung automatisch eine E-Mail mit Schadensnummer und Zusammenfassung.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR16</td><td>E-Mail enthält: Schadensnummer, Schadensart, Einreichungsdatum, erwartete Bearbeitungszeit.</td></tr>
+        <tr><td class="fa-id">FA-17</td><td>Der Kunde erhält eine E-Mail-Benachrichtigung bei jeder Statusänderung seiner Meldung.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR17</td><td>E-Mail innerhalb 30 Min nach Statusänderung. Enthält neuen Status und Schadensnummer.</td></tr>
+        <tr><td class="fa-id">FA-18</td><td>Das System synchronisiert Statusänderungen mindestens einmal täglich ins Kundenportal.</td><td><span class="prio-pflicht">Pflicht</span></td><td>Dev Team, IT (W-04)</td><td>Batch-Sync läuft täglich 02:00–04:00 Uhr. Fehler werden geloggt und alarmiert.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>4.5 Interne Nutzung</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Anforderung</th><th>Prio</th><th>Quelle</th><th>Akzeptanzkriterium</th></tr></thead>
+      <tbody>
+        <tr><td class="fa-id">FA-19</td><td>Sachbearbeiter können Portal-Meldungen mit allen Formularfeldern und Dokumenten im internen System einsehen.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR20</td><td>Alle Felder und Dokumente im internen System ohne Medienbruch abrufbar.</td></tr>
+        <tr><td class="fa-id">FA-20</td><td>Sachbearbeiter können den Status einer Meldung im internen System aktualisieren.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR21</td><td>Statusänderung nach nächster Batch-Synchronisation im Portal sichtbar.</td></tr>
+        <tr><td class="fa-id">FA-21</td><td>Support-Mitarbeitende können eine Meldung anhand der Schadensnummer direkt abrufen.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR23 ⚙️ Annahme</td><td>Suche nach Schadensnummer liefert Ergebnis in &lt; 3 Sekunden.</td></tr>
+      </tbody>
+    </table></div>
+    <blockquote><p><strong>Hinweis W-07 (offen — kritisch):</strong> Dok. 2 fordert gleichzeitig vollständige Automatisierung <em>und</em> manuelle Prüfung aller Schadensfälle. Empfehlung: Hybridmodell. FA-30 (Detailanforderung) kann erst nach Entscheid durch Fachbereich und Compliance formuliert werden (→ A-06, L-01).</p></blockquote>
+
+    <h3>4.6 Sicherheit und Datenschutz</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Anforderung</th><th>Prio</th><th>Quelle</th><th>Akzeptanzkriterium</th></tr></thead>
+      <tbody>
+        <tr><td class="fa-id">FA-22</td><td>Das System speichert alle Kundendaten und Dokumente ausschliesslich auf Servern in der Schweiz.</td><td><span class="prio-pflicht">Pflicht</span></td><td>Compliance (W-08)</td><td>Vertraglich verankertes Hosting in der Schweiz. Kein Daten-Routing über ausländische Dienste.</td></tr>
+        <tr><td class="fa-id">FA-23</td><td>Zugriff auf personenbezogene Daten ist nur nach erfolgreicher Authentifizierung möglich.</td><td><span class="prio-pflicht">Pflicht</span></td><td>Security Team (W-02a)</td><td>Direktaufruf geschützter URLs ohne Login gibt HTTP 401 zurück.</td></tr>
+        <tr><td class="fa-id">FA-24</td><td>Der Kunde stimmt der Datenschutzerklärung (DSG-konform) bei der Registrierung explizit zu.</td><td><span class="prio-pflicht">Pflicht</span></td><td>Compliance (W-09 korrigiert)</td><td>Registrierung ohne aktives Setzen der Checkbox nicht abschliessbar. Zustimmung mit Timestamp gespeichert.</td></tr>
+        <tr><td class="fa-id">FA-25</td><td>Das System schützt alle Formulare gegen CSRF-Angriffe.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR27</td><td>Formular-Submit ohne gültiges CSRF-Token gibt HTTP 403 zurück.</td></tr>
+      </tbody>
+    </table></div>
+    <blockquote><p><strong>Hinweis zu FA-24 (W-09):</strong> Quelldokumente nennen fälschlicherweise „DSGVO". Massgebend ist das Schweizer DSG (rev. 2023). Anwendbarkeit der DSGVO für EU-Kunden (Art. 3 DSGVO) ist von der Rechtsabteilung separat zu prüfen (→ L-04).</p></blockquote>
+
+    <h3>4.7 Barrierefreiheit und Usability</h3>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Anforderung</th><th>Prio</th><th>Quelle</th><th>Akzeptanzkriterium</th></tr></thead>
+      <tbody>
+        <tr><td class="fa-id">FA-26</td><td>Alle Seiten erfüllen WCAG 2.1 Level AA.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR29</td><td>Automatisierter WCAG-Check (axe) ohne kritische Fehler. Manueller Test mit Screen Reader erfolgreich.</td></tr>
+        <tr><td class="fa-id">FA-27</td><td>Alle Funktionen sind vollständig per Tastatur bedienbar.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR30</td><td>Vollständige Tab-Navigation durch alle Formulare ohne Maus möglich.</td></tr>
+        <tr><td class="fa-id">FA-28</td><td>Die Anwendung ist auf Desktop und Mobilgeräten nutzbar (responsive Design).</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR31</td><td>Layout bricht nicht bei 320px–1920px. Touch-Targets ≥ 44×44px.</td></tr>
+        <tr><td class="fa-id">FA-29</td><td>Alle Fehlermeldungen enthalten eine konkrete Handlungsanweisung.</td><td><span class="prio-pflicht">Pflicht</span></td><td>PRD FR32</td><td>Kein generisches „Ein Fehler ist aufgetreten". Jede Meldung nennt Ursache und Lösung.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="doc-section">
+    <h2><span class="section-num">5</span>Nicht-Funktionale Anforderungen</h2>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Kategorie</th><th>Anforderung</th><th>Messgrösse</th><th>Quelle</th></tr></thead>
+      <tbody>
+        <tr><td class="nfa-id">NFA-01</td><td>Performance</td><td>Initiale Seitenladezeit (LCP)</td><td>≤ 3s auf mobilem 4G-Netz</td><td>PRD ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-02</td><td>Performance</td><td>Reaktionszeit Formular-Submit</td><td>≤ 1 Sekunde</td><td>PRD ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-03</td><td>Performance</td><td>Ladezeit Statusseite nach Login</td><td>≤ 2s (netzwerkabhängig)</td><td>PRD ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-04</td><td>Performance</td><td>Systemstabilität unter Last</td><td>Stabil bei 500 gleichzeitigen Nutzern</td><td>PRD ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-05</td><td>Sicherheit</td><td>Transportverschlüsselung</td><td>TLS 1.2 oder höher</td><td>Security ✅</td></tr>
+        <tr><td class="nfa-id">NFA-06</td><td>Sicherheit</td><td>Datenverschlüsselung at-rest</td><td>Alle Dokumente und Personendaten verschlüsselt</td><td>Security ✅</td></tr>
+        <tr><td class="nfa-id">NFA-07</td><td>Sicherheit</td><td>Passwortspeicherung</td><td>bcrypt, min. Cost Factor 12</td><td>Security ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-08</td><td>Sicherheit</td><td>Audit Logging</td><td>Alle Zugriffsversuche protokolliert</td><td>Security ✅</td></tr>
+        <tr><td class="nfa-id">NFA-09</td><td>Sicherheit</td><td>Malware-Scan</td><td>Alle Uploads vor Speicherung gescannt</td><td>Security ✅</td></tr>
+        <tr><td class="nfa-id">NFA-10</td><td>Verfügbarkeit</td><td>Systemverfügbarkeit</td><td>≥ 99.5% (exkl. Wartungsfenster)</td><td>Business Vision ✅</td></tr>
+        <tr><td class="nfa-id">NFA-11</td><td>Verfügbarkeit</td><td>Batch-Sync Zuverlässigkeit</td><td>Fehler innerhalb 30 Min alarmiert</td><td>IT Architektur ✅</td></tr>
+        <tr><td class="nfa-id">NFA-12</td><td>Skalierbarkeit</td><td>Initiale Auslegung</td><td>1'000 Nutzer, 100 Sessions</td><td>PRD ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-13</td><td>Skalierbarkeit</td><td>Skalierungsziel</td><td>Skalierbar auf 50'000 Nutzer</td><td>PRD ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-14</td><td>Datenschutz</td><td>Gesetzliche Konformität</td><td>Schweizer DSG rev. 2023 — nicht DSGVO (W-09)</td><td>Compliance ✅</td></tr>
+        <tr><td class="nfa-id">NFA-15</td><td>Datenschutz</td><td>Datenlokalisierung</td><td>100% Kundendaten auf Schweizer Servern</td><td>Compliance (W-08) ✅</td></tr>
+        <tr><td class="nfa-id">NFA-16</td><td>Datenschutz</td><td>Datenlöschung</td><td>Löschbar auf Antrag (DSG Art. 32)</td><td>Compliance ✅</td></tr>
+        <tr><td class="nfa-id">NFA-17</td><td>Wartbarkeit</td><td>API-Versionierung</td><td>REST /api/v1/; Breaking Changes nur mit Versionswechsel</td><td>IT Architektur ✅</td></tr>
+        <tr><td class="nfa-id">NFA-18</td><td>Wartbarkeit</td><td>Browser-Kompatibilität</td><td>Letzte 2 Hauptversionen Chrome, Firefox, Safari, Edge</td><td>PRD ⚙️</td></tr>
+        <tr><td class="nfa-id">NFA-19</td><td>Wartbarkeit</td><td>Logging und Monitoring</td><td>Zentrales Logging; Monitoring-Dashboard</td><td>IT Architektur ✅</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="doc-section">
+    <h2><span class="section-num">7</span>Annahmen</h2>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Annahme</th><th>Begründung</th></tr></thead>
+      <tbody>
+        <tr><td class="a-id">A-01</td><td>Login für alle Zugriffe auf personenbezogene Daten verpflichtend. Kein anonymer Zugang.</td><td>Security (W-02a). Datenschutz hat höchste Priorität.</td></tr>
+        <tr><td class="a-id">A-02</td><td>Upload-Limit: 10 MB pro Datei.</td><td>Einzige technisch begründete Vorgabe (IT, W-03).</td></tr>
+        <tr><td class="a-id">A-03</td><td>Statusaktualisierung batch-basiert, einmal täglich. Echtzeit nicht möglich.</td><td>IT bestätigt technische Einschränkung (W-04).</td></tr>
+        <tr><td class="a-id">A-04</td><td>Phase 1 ausschliesslich Deutsch. Architektur i18n-fähig.</td><td>Pragmatischer Start; FR/IT für Phase 2 (W-06).</td></tr>
+        <tr><td class="a-id">A-05</td><td>Keine native App in Phase 1. Responsive Web genügt.</td><td>Mobile Team bestätigt (W-05).</td></tr>
+        <tr><td class="a-id">A-06</td><td>Hybridmodell: automatisierte Vorprüfung + manuelle Freigabe für komplexe Fälle.</td><td>Vollautomatisierung regulatorisch riskant; rein manuell nicht skalierbar (W-07, Entscheid ausstehend).</td></tr>
+        <tr><td class="a-id">A-07</td><td>Alle Kundendaten ausschliesslich in der Schweiz. Cloud ausserhalb ausgeschlossen.</td><td>Compliance (W-08).</td></tr>
+        <tr><td class="a-id">A-08</td><td>Anwendbares Datenschutzrecht: Schweizer DSG rev. 2023, nicht EU-DSGVO.</td><td>Sachlicher Fehler in Quelldokumenten korrigiert (W-09).</td></tr>
+        <tr><td class="a-id">A-09</td><td>Kundenregistrierung eigenständig über Portal möglich (ohne Support).</td><td>Selbstregistrierung + automatisierte Verifizierung (W-02b, Entscheid ausstehend).</td></tr>
+        <tr><td class="a-id">A-10</td><td>Support über E-Mail. Chat-Support in Phase 2.</td><td>E-Mail als realistischer MVP-Kanal (W-01).</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="doc-section">
+    <h2><span class="section-num">8</span>Offene Punkte und Lücken</h2>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Lücke</th><th>Handlungsbedarf</th></tr></thead>
+      <tbody>
+        <tr><td class="l-id">L-01</td><td>Schadensfallverarbeitung (Hybridmodell) nicht final entschieden</td><td>Fachbereich und Compliance: Kriterien für auto vs. manuell definieren</td></tr>
+        <tr><td class="l-id">L-02</td><td>Registrierungsprozess nicht final geklärt (Selbst vs. Support)</td><td>Fachbereich muss entscheiden; Auswirkung auf FA-01</td></tr>
+        <tr><td class="l-id">L-03</td><td>Bestandssystem-API nicht dokumentiert</td><td>IT: API-Spezifikation erstellen; kritisch für FA-09, FA-18–FA-20</td></tr>
+        <tr><td class="l-id">L-04</td><td>Datenschutzprüfung für EU-Kunden ausstehend</td><td>Rechtsabteilung: DSGVO-Anwendbarkeit prüfen (Art. 3 DSGVO)</td></tr>
+        <tr><td class="l-id">L-05</td><td>SLA für Bestandssystem-Integration nicht definiert</td><td>IT: Verfügbarkeits- und Latenz-SLA für Batch-Sync definieren</td></tr>
+        <tr><td class="l-id">L-06</td><td>Konkrete Schadensarten nicht spezifiziert</td><td>Fachbereich: Liste der unterstützten Schadensarten (FA-06) liefern</td></tr>
+        <tr><td class="l-id">L-07</td><td>Authentifizierungsanbieter (SSO-System) nicht bestimmt</td><td>IT Architektur: SSO-Provider festlegen</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:12px;font-size:12px;color:#94a3b8;">Lastenheft Version 1.0 — Final · Freigegeben: 17. April 2026 · Nächste Review nach Klärung von L-01, L-02, L-03</p>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 3 — WIDERSPRUCHSKATALOG
+═══════════════════════════════════════════ -->
+<div class="panel doc-panel" id="panel-widerspruch">
+<div class="doc-content">
+
+  <h1>Widerspruchskatalog — Alpina Connect</h1>
+  <p style="color:#64748b;margin-bottom:20px;">Identifizierte Widersprüche in den Quelldokumenten · Direkte Analyse der Rohtexte</p>
+
+  <div class="doc-meta">
+    <div class="doc-meta-item"><label>Autorin</label><span>Kathrin</span></div>
+    <div class="doc-meta-item"><label>Datum</label><span>17. April 2026</span></div>
+    <div class="doc-meta-item"><label>Version</label><span>1.0</span></div>
+    <div class="doc-meta-item"><label>Status</label><span class="final">Final</span></div>
+    <div class="doc-meta-item"><label>Entschieden</label><span>7 von 9</span></div>
+    <div class="doc-meta-item"><label>Offen</label><span style="color:#FCA5A5;">2 (W-02b, W-07)</span></div>
+  </div>
+
+  <blockquote><p><strong>Prioritätshierarchie:</strong> Compliance / Security → Business Vision → Fachbereich → Pragmatismus<br>
+  <strong>Methodische Notiz:</strong> Dok. 2 enthält Aussagen stellenweise 5–15× wiederholt. Wiederholungsfrequenz wurde <em>nicht</em> als Prioritätsindikator gewertet.</p></blockquote>
+
+  <div class="doc-table-wrap" style="margin:16px 0 28px;">
+    <table><thead><tr><th>Dok.</th><th>Inhalt</th></tr></thead><tbody>
+      <tr><td>Dok. 1</td><td>Alpina_Connect_Business_Vision.docx — Management, strategische Ziele</td></tr>
+      <tr><td>Dok. 2</td><td>Alpina_Connect_Fachbereich_Chaotisch.docx — Fachbereich, funktionale Wünsche</td></tr>
+      <tr><td>Dok. 3</td><td>Alpina_Connect_IT_Mix.docx — IT, E-Mails, Architekturentscheide</td></tr>
+      <tr><td>Dok. 4</td><td>Alpina_Connect_Transkript.docx — Interview-Transkript, Stakeholder-Perspektiven</td></tr>
+    </tbody></table>
+  </div>
+
+  <!-- W-01 -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-01</span>
+      <span class="w-title">Support-Kanal: Chat vs. E-Mail</span>
+      <div class="w-meta"><span class="badge-w-open">📋 Empfehlung</span><span style="font-size:11px;color:#64748b;">UX / Betrieb</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 2)</th><th>Aussage B (Dok. 3)</th></tr></thead>
+    <tbody><tr><td>„Kunden sollen jederzeit per Live-Chat mit einem Mitarbeitenden kommunizieren können."</td><td>„Chat-Integration ist technisch aufwendig und nicht für Phase 1 geplant."</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Empfehlung</div><p>E-Mail-Support als MVP-Kanal. Chat-Support in Phase 2. Technische Machbarkeit und Ressourcen überwiegen.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> A-10, keine Chat-FA in Phase 1</div>
+  </div>
+
+  <!-- W-02a -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-02a</span>
+      <span class="w-title">Login: Anonymer Zugang vs. SSO-Pflicht</span>
+      <div class="w-meta"><span class="badge-w-ok">✅ Entschieden</span><span style="font-size:11px;color:#64748b;">Security</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 2)</th><th>Aussage B (Dok. 3)</th></tr></thead>
+    <tbody><tr><td>„Kunden sollen ohne Login eine Schadenmeldung einreichen können."</td><td>„Zugriff auf personenbezogene Daten nur nach SSO-Authentifizierung. Kein anonymer Zugang."</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Entscheidung</div><p>SSO-Login ist verpflichtend. Kein anonymer Zugang. Security-Anforderung hat Vorrang (DSG).</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-02, FA-23, A-01</div>
+  </div>
+
+  <!-- W-02b -->
+  <div class="w-card" style="border-color:#fca5a5;">
+    <div class="w-header">
+      <span class="w-num">W-02b</span>
+      <span class="w-title">Registrierung: Selbst vs. nur über Support</span>
+      <div class="w-meta"><span class="badge-w-open">📋 Empfehlung</span><span class="badge-w-crit">❗ Kritisch</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 2, Passage 1)</th><th>Aussage B (Dok. 2, Passage 2)</th></tr></thead>
+    <tbody><tr><td>„Registrierung erfolgt ausschliesslich über den Kundendienst — kein Self-Service."</td><td>„Kunde soll sich jederzeit selbst registrieren und sofort loslegen können."</td></tr></tbody></table></div>
+    <div class="note-box">Besonderheit: Beide widersprüchlichen Aussagen stammen aus demselben Dokument (Dok. 2) — fehlende interne Abstimmung im Fachbereich.</div>
+    <div class="w-open"><div class="label">Empfehlung (Entscheid ausstehend)</div><p>Selbstregistrierung mit automatisierter E-Mail-Verifizierung. Fachbereich und Management müssen bestätigen.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-01, L-02</div>
+  </div>
+
+  <!-- W-02c -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-02c</span>
+      <span class="w-title">2FA vs. einfacher Zugang</span>
+      <div class="w-meta"><span class="badge-w-ok">✅ Entschieden</span><span style="font-size:11px;color:#64748b;">Security</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 2)</th><th>Aussage B (Dok. 3)</th></tr></thead>
+    <tbody><tr><td>„Login soll so einfach wie möglich sein — kein aufwendiger Prozess."</td><td>„2FA ist für den Zugriff auf Versicherungsdaten verpflichtend."</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Entscheidung</div><p>2FA (SMS-Code) ist verpflichtend. Security-Anforderung hat Vorrang. UX-Optimierung in Phase 2 möglich.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-02, NFA-05</div>
+  </div>
+
+  <!-- W-03 -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-03</span>
+      <span class="w-title">Upload-Limit: 5 MB / 10 MB / 50 MB</span>
+      <div class="w-meta"><span class="badge-w-ok">✅ Entschieden</span><span style="font-size:11px;color:#64748b;">Dokumentenverwaltung</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 2)</th><th>Aussage B (Dok. 3)</th><th>Aussage C (Dok. 2)</th></tr></thead>
+    <tbody><tr><td>„Max. 5 MB pro Dokument."</td><td>„Infrastruktur unterstützt bis zu 10 MB pro Datei."</td><td>„Kunden brauchen 50 MB für hochauflösende Fotos."</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Entscheidung</div><p>10 MB pro Datei (IT-Infrastrukturvorgabe). Einzige technisch begründete Zahl. 50 MB ohne Infrastrukturnachweis nicht realisierbar.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-12, A-02 · <strong>Code:</strong> ClaimFormPage.jsx:14</div>
+  </div>
+
+  <!-- W-04 -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-04</span>
+      <span class="w-title">Status: Echtzeit-Updates vs. Batch täglich</span>
+      <div class="w-meta"><span class="badge-w-ok">✅ Entschieden</span><span style="font-size:11px;color:#64748b;">Statusverfolgung</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 1)</th><th>Aussage B (Dok. 3)</th></tr></thead>
+    <tbody><tr><td>„Kunden sollen ihren Status jederzeit in Echtzeit einsehen können."</td><td>„Echtzeit-Synchronisation ist technisch nicht möglich. Batch täglich."</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Entscheidung</div><p>Batch-Synchronisation täglich (02:00–04:00) in Phase 1. Echtzeit in Phase 2. IT-Einschränkung durch Bestandssystem.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-18, FA-10, NFA-11, A-03</div>
+  </div>
+
+  <!-- W-05 -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-05</span>
+      <span class="w-title">Mobile: Native App vs. Desktop-Fokus</span>
+      <div class="w-meta"><span class="badge-w-ok">✅ Entschieden</span><span style="font-size:11px;color:#64748b;">Technologie</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 2)</th><th>Aussage B (Dok. 4)</th></tr></thead>
+    <tbody><tr><td>„Wir brauchen eine native App für iOS und Android."</td><td>„Keine native App geplant. Responsive Web deckt mobile Nutzung ab."</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Entscheidung</div><p>Responsive Web in Phase 1. Native App in Phase 3. Mobile Team hat native App explizit ausgeschlossen.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-28, A-05, Phasenplan</div>
+  </div>
+
+  <!-- W-06 -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-06</span>
+      <span class="w-title">Mehrsprachigkeit: sofort vs. initial Deutsch</span>
+      <div class="w-meta"><span class="badge-w-ok">✅ Entschieden</span><span style="font-size:11px;color:#64748b;">Lokalisierung</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 1)</th><th>Aussage B (Dok. 3)</th></tr></thead>
+    <tbody><tr><td>„Portal muss Deutsch, Französisch und Italienisch unterstützen."</td><td>„i18n-Architektur vorgesehen, aber initiale Implementierung nur Deutsch."</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Entscheidung</div><p>Deutsch Phase 1. i18n-Architektur von Beginn an. Französisch/Italienisch in Phase 2.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> A-04, Rahmenbedingungen</div>
+  </div>
+
+  <!-- W-07 -->
+  <div class="w-card" style="border-color:#fca5a5;">
+    <div class="w-header">
+      <span class="w-num">W-07</span>
+      <span class="w-title">Schadensfallverarbeitung: Vollautomatisch vs. Manuell</span>
+      <div class="w-meta"><span class="badge-w-open">📋 Empfehlung</span><span class="badge-w-crit">❗ Kritisch</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 2, Passage 1)</th><th>Aussage B (Dok. 2, Passage 2)</th></tr></thead>
+    <tbody><tr><td>„Alle Schadensmeldungen sollen vollautomatisch ohne menschliches Zutun verarbeitet werden."</td><td>„Jede Schadenmeldung muss von einem Sachbearbeiter manuell geprüft und freigegeben werden."</td></tr></tbody></table></div>
+    <div class="note-box">Besonderheit: Beide Aussagen stammen aus demselben Dokument (Dok. 2) — direkt-antagonistischer Widerspruch in einer einzigen Quelle.</div>
+    <div class="w-open"><div class="label">Empfehlung (Entscheid ausstehend)</div><p>Hybridmodell: automatisierte Vorprüfung + manuelle Freigabe für komplexe Fälle. Fachbereich und Compliance müssen Kriterien definieren (Betragsgrenzen, Risikoklassen).</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> A-06, L-01 — FA-30 ausstehend</div>
+  </div>
+
+  <!-- W-08 -->
+  <div class="w-card">
+    <div class="w-header">
+      <span class="w-num">W-08</span>
+      <span class="w-title">Hosting: Schweiz vs. Ausland</span>
+      <div class="w-meta"><span class="badge-w-ok">✅ Entschieden</span><span style="font-size:11px;color:#64748b;">Compliance</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage A (Dok. 3)</th><th>Aussage B (Dok. 2)</th></tr></thead>
+    <tbody><tr><td>„Hosting in der Schweiz ist vertraglich vorgeschrieben und nicht verhandelbar."</td><td>Implizite Nutzung ausländischer Cloud-Dienste (AWS, Azure) ohne Einschränkungshinweis.</td></tr></tbody></table></div>
+    <div class="w-decision"><div class="label">Entscheidung</div><p>Ausschliesslich Schweizer Rechenzentren. Kein Daten-Routing über ausländische Dienste. Compliance-Anforderung — nicht verhandelbar.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-22, NFA-15, A-07</div>
+  </div>
+
+  <!-- W-09 -->
+  <div class="w-card" style="border-color:#a78bfa;">
+    <div class="w-header">
+      <span class="w-num">W-09</span>
+      <span class="w-title">Datenschutzrecht: DSGVO vs. DSG</span>
+      <div class="w-meta"><span class="badge-w-fix">✅ Korrigiert (Sachfehler)</span><span style="font-size:11px;color:#64748b;">Compliance / Recht</span></div>
+    </div>
+    <div class="doc-table-wrap"><table><thead><tr><th>Aussage in Dok. 1, 2, 3</th><th>Rechtslage (Schweiz)</th></tr></thead>
+    <tbody><tr><td>Mehrfache Referenzen auf „DSGVO-Konformität" und „DSGVO-konforme Datenschutzerklärung" in allen drei Quelldokumenten.</td><td>Alpina Versicherungen AG ist ein Schweizer Unternehmen. Anwendbares Recht: Schweizer DSG (rev. 2023, in Kraft 01.09.2023) — nicht EU-DSGVO.</td></tr></tbody></table></div>
+    <div class="note-box">Besonderheit: Kein Meinungswiderspruch — ein sachlicher Fehler in allen drei Quelldokumenten. Ohne gezielte Nachfrage wäre der Fehler ins Lastenheft übernommen worden.</div>
+    <div class="w-decision"><div class="label">Korrektur</div><p>DSG (rev. 2023) ist massgebendes Datenschutzrecht. Alle DSGVO-Referenzen in Quelldokumenten sind fehlerhaft und wurden korrigiert. DSGVO-Anwendbarkeit für EU-Kunden (Art. 3 DSGVO) ist von der Rechtsabteilung separat zu prüfen.</p></div>
+    <div class="w-impact"><strong>Lastenheft:</strong> FA-24, NFA-14, NFA-16, A-08, L-04</div>
+  </div>
+
+  <!-- Übersicht -->
+  <div class="doc-section" style="margin-top:28px;">
+    <h2>Übersicht aller Widersprüche</h2>
+    <div class="doc-table-wrap"><table>
+      <thead><tr><th>ID</th><th>Thema</th><th>Quellen</th><th>Status</th><th>Lastenheft</th></tr></thead>
+      <tbody>
+        <tr><td class="w-id">W-01</td><td>Support: Chat vs. E-Mail</td><td>Dok. 2 vs. 3</td><td><span class="badge-w-open">Empfehlung</span></td><td>A-10</td></tr>
+        <tr><td class="w-id">W-02a</td><td>Login: kein Login vs. SSO</td><td>Dok. 2 vs. 3</td><td><span class="badge-w-ok">Entschieden</span></td><td>FA-02, FA-23</td></tr>
+        <tr><td class="w-id">W-02b</td><td>Registrierung: Selbst vs. Support</td><td>Dok. 2 vs. 2</td><td><span class="badge-w-crit">Offen ❗</span></td><td>FA-01, L-02</td></tr>
+        <tr><td class="w-id">W-02c</td><td>2FA vs. einfacher Zugang</td><td>Dok. 2 vs. 3</td><td><span class="badge-w-ok">Entschieden</span></td><td>FA-02</td></tr>
+        <tr><td class="w-id">W-03</td><td>Upload: 5 / 10 / 50 MB</td><td>Dok. 2 vs. 3</td><td><span class="badge-w-ok">Entschieden</span></td><td>FA-12</td></tr>
+        <tr><td class="w-id">W-04</td><td>Status: Echtzeit vs. Batch</td><td>Dok. 1 vs. 3</td><td><span class="badge-w-ok">Entschieden</span></td><td>FA-18</td></tr>
+        <tr><td class="w-id">W-05</td><td>Mobile: native App vs. Web</td><td>Dok. 2 vs. 4</td><td><span class="badge-w-ok">Entschieden</span></td><td>FA-28</td></tr>
+        <tr><td class="w-id">W-06</td><td>Sprache: sofort 3 vs. DE zuerst</td><td>Dok. 1 vs. 3</td><td><span class="badge-w-ok">Entschieden</span></td><td>A-04</td></tr>
+        <tr><td class="w-id">W-07</td><td>Verarbeitung: Auto vs. Manuell</td><td>Dok. 2 vs. 2</td><td><span class="badge-w-crit">Offen ❗</span></td><td>A-06, L-01</td></tr>
+        <tr><td class="w-id">W-08</td><td>Hosting: Schweiz vs. Ausland</td><td>Dok. 3 vs. 2</td><td><span class="badge-w-ok">Entschieden</span></td><td>FA-22, NFA-15</td></tr>
+        <tr><td class="w-id">W-09</td><td>Datenschutz: DSGVO vs. DSG</td><td>Dok. 1, 2, 3</td><td><span class="badge-w-fix">Korrigiert</span></td><td>FA-24, NFA-14</td></tr>
+      </tbody>
+    </table></div>
+    <p style="margin-top:12px;font-size:12px;color:#94a3b8;">9 Widersprüche identifiziert · 7 entschieden/korrigiert · 2 offen (W-02b, W-07) · Widerspruchskatalog v1.0 — Final</p>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PANEL 4 — PROTOTYP
+═══════════════════════════════════════════ -->
+<div class="panel" id="panel-prototype">
+  <div style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-align:center;max-width:420px;padding:40px 32px;background:#243347;border-radius:20px;border:1px solid #2D3D5C;">
+
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin:0 auto 20px;display:block;">
+      <rect width="64" height="64" rx="16" fill="#1B3A6B"/>
+      <path d="M10 52 L32 14 L54 52" fill="none" stroke="white" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <line x1="20" y1="38" x2="44" y2="38" stroke="white" stroke-width="4.5" stroke-linecap="round"/>
+      <polygon points="32,14 26,24 38,24" fill="#C41230"/>
+    </svg>
+
+    <div style="color:#e2e8f0;font-size:22px;font-weight:700;margin-bottom:6px;">Alpina Connect</div>
+    <div style="color:#6B7C93;font-size:13px;margin-bottom:28px;">Prototyp · React + Vite + Tailwind CSS</div>
+
+    <button
+       onclick="location.href='../../prototype/dist/index.html'"
+       style="display:block;width:100%;background:#1B3A6B;color:#fff;border:none;border-radius:12px;padding:14px 28px;font-size:15px;font-weight:600;margin-bottom:12px;cursor:pointer;transition:background .2s;font-family:inherit;"
+       onmouseover="this.style.background='#C41230'" onmouseout="this.style.background='#1B3A6B'">
+      Prototyp öffnen →
+    </button>
+    <button
+       onclick="window.open('../../prototype/dist/index.html')"
+       style="display:block;width:100%;background:transparent;color:#6B7C93;border:1px solid #2D3D5C;border-radius:10px;padding:9px 20px;font-size:12px;font-weight:500;margin-bottom:4px;cursor:pointer;transition:all .2s;font-family:inherit;"
+       onmouseover="this.style.color='#e2e8f0';this.style.borderColor='#4A5C7A'" onmouseout="this.style.color='#6B7C93';this.style.borderColor='#2D3D5C'">
+      In neuem Tab öffnen (Fallback)
+    </button>
+
+    <div style="background:#1A2332;border-radius:10px;padding:16px 20px;margin-top:20px;text-align:left;">
+      <div style="color:#64748b;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Demo-Zugangsdaten</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="color:#94a3b8;font-size:12px;">E-Mail</span>
+        <span style="color:#e2e8f0;font-size:12px;font-family:monospace;">beliebig@example.ch</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="color:#94a3b8;font-size:12px;">Passwort</span>
+        <span style="color:#e2e8f0;font-size:12px;font-family:monospace;">mind. 8 Zeichen</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:#94a3b8;font-size:12px;">2FA-Code</span>
+        <span style="color:#C41230;font-size:13px;font-family:monospace;font-weight:700;">123456</span>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="background:#1A2332;border-radius:8px;padding:10px 8px;text-align:center;">
+        <div style="font-size:18px;margin-bottom:4px;">🔐</div>
+        <div style="color:#94a3b8;font-size:10px;">Login + 2FA</div>
+      </div>
+      <div style="background:#1A2332;border-radius:8px;padding:10px 8px;text-align:center;">
+        <div style="font-size:18px;margin-bottom:4px;">📋</div>
+        <div style="color:#94a3b8;font-size:10px;">Schadenmeldung</div>
+      </div>
+      <div style="background:#1A2332;border-radius:8px;padding:10px 8px;text-align:center;">
+        <div style="font-size:18px;margin-bottom:4px;">📊</div>
+        <div style="color:#94a3b8;font-size:10px;">Statusübersicht</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ── Panel switching ── */
+function switchPanel(btn, id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('panel-' + id).classList.add('active')
+  btn.classList.add('active')
+}
+
+
+/* ── Slide navigation ── */
+const slides = document.querySelectorAll('.slide')
+const total  = slides.length
+let current  = 0
+
+function show(n) {
+  slides[current].classList.remove('active')
+  current = Math.max(0, Math.min(n, total - 1))
+  slides[current].classList.add('active')
+  document.getElementById('counter').textContent = (current + 1) + ' / ' + total
+  document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%'
+  document.getElementById('prev').disabled = current === 0
+  document.getElementById('next').disabled = current === total - 1
+}
+
+function go(dir) { show(current + dir) }
+
+document.addEventListener('keydown', e => {
+  const activePanel = document.querySelector('.panel.active')
+  if (!activePanel || activePanel.id !== 'panel-slides') return
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(+1) }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(-1) }
+})
+
+show(0)
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+# ─────────────────────────────────────────────────────────────
+# Alpina Connect — CI/CD Pipeline
+# ─────────────────────────────────────────────────────────────
+# Jobs:
+#   1. prototype-build  — Prototyp bauen + Artifact sichern
+#   2. presentation     — Präsentation validieren + Artifact sichern
+#   3. deploy           — GitHub Pages (nur auf main, nach 1+2)
+#
+# Jobs 1 und 2 laufen parallel.
+# Job 3 wartet auf beide und deployed nur bei Push auf main.
+# ─────────────────────────────────────────────────────────────
+
+name: Alpina Connect CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Verhindert parallele Deployments auf demselben Branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ═══════════════════════════════════════════════════════════
+  # JOB 1 — Prototyp bauen und validieren
+  # ═══════════════════════════════════════════════════════════
+  prototype-build:
+    name: Prototyp — Build & Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: prototype
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js 20 einrichten (mit npm-Cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: prototype/package-lock.json
+
+      - name: Abhängigkeiten installieren (ci = reproduzierbar)
+        run: npm ci
+
+      - name: Prototyp bauen
+        run: npm run build
+
+      - name: Build-Ausgabe validieren
+        run: |
+          echo "── Build-Artefakte prüfen ──"
+          test -f dist/index.html    || (echo "FEHLER: dist/index.html fehlt"    && exit 1)
+          test -d dist/assets        || (echo "FEHLER: dist/assets fehlt"        && exit 1)
+          test -f dist/assets/*.js   || (echo "FEHLER: Kein JS-Bundle gefunden"  && exit 1)
+
+          JS_SIZE=$(du -k dist/assets/*.js | cut -f1)
+          echo "JS-Bundle: ${JS_SIZE} KB"
+          [ "$JS_SIZE" -gt 10 ] || (echo "FEHLER: JS-Bundle zu klein (<10 KB)" && exit 1)
+
+          echo "Relative Pfade prüfen (kein absoluter /assets-Pfad)..."
+          grep -q 'src="/assets' dist/index.html && (echo "FEHLER: Absolute Pfade gefunden — base: './' fehlt!" && exit 1) || true
+          grep -q 'src="./assets' dist/index.html || (echo "WARNUNG: Erwartete relative Asset-Referenz nicht gefunden")
+
+          echo "file:// Kompatibilität prüfen (kein type=module)..."
+          grep -q 'type="module"' dist/index.html && (echo "FEHLER: type=module gefunden — patch-dist.mjs nicht ausgeführt!" && exit 1) || true
+
+          echo "── Alle Checks bestanden ✓ ──"
+
+      - name: Anforderungs-Traceability prüfen
+        run: |
+          echo "── FA-Referenzen im Quellcode prüfen ──"
+          FA_COUNT=$(grep -r "FA-" src/ --include="*.jsx" | wc -l)
+          echo "FA-Kommentare im Code: $FA_COUNT"
+          [ "$FA_COUNT" -gt 10 ] || (echo "WARNUNG: Weniger als 10 FA-Referenzen gefunden")
+          echo "── Traceability-Check abgeschlossen ──"
+
+      - name: Dist-Ordner als Artifact sichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: prototype-dist-${{ github.sha }}
+          path: prototype/dist/
+          retention-days: 30
+          if-no-files-found: error
+
+  # ═══════════════════════════════════════════════════════════
+  # JOB 2 — Präsentation validieren und sichern
+  # ═══════════════════════════════════════════════════════════
+  presentation:
+    name: Präsentation — Validate & Archive
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Datei prüfen (Existenz + Mindestgrösse)
+        run: |
+          FILE="_bmad-output/planning-artifacts/praesentation.html"
+          test -f "$FILE" || (echo "FEHLER: praesentation.html nicht gefunden!" && exit 1)
+          SIZE=$(wc -c < "$FILE")
+          echo "Dateigrösse: $SIZE Bytes"
+          [ "$SIZE" -gt 50000 ] || (echo "FEHLER: Datei zu klein — möglicherweise unvollständig!" && exit 1)
+          echo "Datei vorhanden und vollständig ✓"
+
+      - name: HTML-Grundstruktur validieren
+        run: |
+          FILE="_bmad-output/planning-artifacts/praesentation.html"
+          echo "── HTML-Struktur prüfen ──"
+          grep -q "<!DOCTYPE html>"  "$FILE" || (echo "FEHLER: DOCTYPE fehlt!"  && exit 1)
+          grep -q "<html lang=\"de\">" "$FILE" || (echo "FEHLER: Sprach-Attribut fehlt!" && exit 1)
+          grep -q "</html>"          "$FILE" || (echo "FEHLER: HTML nicht geschlossen!" && exit 1)
+          echo "Grundstruktur OK ✓"
+
+      - name: Portal-Panels validieren (alle 4 müssen vorhanden sein)
+        run: |
+          FILE="_bmad-output/planning-artifacts/praesentation.html"
+          echo "── Panel-Vollständigkeit prüfen ──"
+          grep -q "id=\"panel-slides\""      "$FILE" || (echo "FEHLER: Präsentations-Panel fehlt!"    && exit 1)
+          grep -q "id=\"panel-lastenheft\""  "$FILE" || (echo "FEHLER: Lastenheft-Panel fehlt!"       && exit 1)
+          grep -q "id=\"panel-widerspruch\"" "$FILE" || (echo "FEHLER: Widerspruchs-Panel fehlt!"     && exit 1)
+          grep -q "id=\"panel-prototype\""   "$FILE" || (echo "FEHLER: Prototyp-Panel fehlt!"         && exit 1)
+          echo "Alle 4 Panels vorhanden ✓"
+
+      - name: Anforderungs-Abdeckung prüfen (FA-IDs im Lastenheft-Panel)
+        run: |
+          FILE="_bmad-output/planning-artifacts/praesentation.html"
+          echo "── FA-Abdeckung prüfen ──"
+          FA_COUNT=$(grep -o "FA-[0-9]\+" "$FILE" | sort -u | wc -l)
+          echo "Eindeutige FA-IDs in Präsentation: $FA_COUNT"
+          [ "$FA_COUNT" -ge 20 ] || (echo "WARNUNG: Weniger als 20 FA-IDs gefunden (erwartet: 29)")
+          echo "── Abdeckungs-Check abgeschlossen ──"
+
+      - name: Navigation validieren
+        run: |
+          FILE="_bmad-output/planning-artifacts/praesentation.html"
+          grep -q "switchPanel" "$FILE" || (echo "FEHLER: Navigation (switchPanel) fehlt!" && exit 1)
+          SLIDE_COUNT=$(grep -c "class=\"slide" "$FILE" || true)
+          echo "Gefundene Slides: $SLIDE_COUNT"
+          [ "$SLIDE_COUNT" -ge 8 ] || (echo "FEHLER: Weniger als 8 Slides!" && exit 1)
+          echo "Navigation und Slides vollständig ✓"
+
+      - name: Präsentation als Artifact sichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: presentation-${{ github.sha }}
+          path: _bmad-output/planning-artifacts/praesentation.html
+          retention-days: 90
+          if-no-files-found: error
+
+  # ═══════════════════════════════════════════════════════════
+  # JOB 3 — GitHub Pages Deploy (nur auf main nach PR-Merge)
+  # ═══════════════════════════════════════════════════════════
+  deploy:
+    name: Deploy — GitHub Pages
+    needs: [prototype-build, presentation]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js 20 einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: prototype/package-lock.json
+
+      - name: Prototyp für Deployment bauen
+        run: npm ci && npm run build
+        working-directory: prototype
+
+      - name: GitHub Pages Struktur aufbauen
+        run: |
+          mkdir -p _site/prototype
+
+          # Präsentation als Startseite
+          cp _bmad-output/planning-artifacts/praesentation.html _site/index.html
+
+          # Prototyp-Link in der Präsentation auf den Pages-Pfad anpassen
+          sed -i 's|../../prototype/dist/index.html|./prototype/index.html|g' _site/index.html
+
+          # Prototyp-Dist in Unterordner kopieren
+          cp -r prototype/dist/. _site/prototype/
+
+          echo "── Deployment-Struktur ──"
+          echo "_site/index.html          → Präsentation (Startseite)"
+          echo "_site/prototype/          → Alpina Connect Prototyp"
+          ls -lh _site/
+          ls -lh _site/prototype/
+
+      - name: GitHub Pages konfigurieren
+        uses: actions/configure-pages@v4
+
+      - name: Pages-Artifact hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site/
+
+      - name: Zu GitHub Pages deployen
+        id: deployment
+        uses: actions/deploy-pages@v4

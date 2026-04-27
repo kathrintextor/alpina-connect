@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Die KI-Reise — Von Null zum Lastenheft mit Claude + BMAD</title>
+  <style>
+    /* === DESIGN-TOKEN === */
+    :root {
+      --accent:        #2563eb;
+      --accent-light:  #dbeafe;
+      --accent-dark:   #1d4ed8;
+      --bg:            #f8fafc;
+      --surface:       #ffffff;
+      --text:          #1e293b;
+      --text-muted:    #64748b;
+      --border:        #e2e8f0;
+      --border-strong: #cbd5e1;
+      --knockout-bg:   #2563eb;
+      --knockout-text: #ffffff;
+      --warn:          #b91c1c;
+      --warn-bg:       #fee2e2;
+      --progress-h:    4px;
+      --font-body:     system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-mono:     ui-monospace, "Cascadia Code", "Consolas", monospace;
+      --slide-pad:     clamp(2rem, 6vw, 5rem);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    /* === FORTSCHRITTSBALKEN === */
+    #progress-bar {
+      position: fixed; top: 0; left: 0;
+      height: var(--progress-h); width: 0%;
+      background: var(--accent); z-index: 100;
+      transition: width 0.3s ease;
+    }
+
+    /* === FOLIEN-ZÄHLER & TASTENHILFE === */
+    #slide-counter {
+      position: fixed; bottom: 1.25rem; right: 1.5rem;
+      font-size: 0.85rem; color: var(--text-muted);
+      z-index: 100; letter-spacing: 0.04em; user-select: none;
+    }
+    #key-hint {
+      position: fixed; bottom: 1.25rem; left: 1.5rem;
+      font-size: 0.75rem; color: var(--border-strong);
+      z-index: 100; user-select: none; transition: color 0.3s;
+    }
+    #key-hint:hover { color: var(--text-muted); }
+
+    /* === FOLIEN === */
+    #deck { width: 100%; height: 100%; }
+
+    .slide {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: stretch;
+      min-height: 100vh;
+      width: 100%;
+      padding: var(--slide-pad);
+      background: var(--surface);
+      gap: 1.25rem;
+      overflow-y: auto;
+    }
+    .slide.active { display: flex; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === TYPOGRAFIE === */
+    .slide h1 {
+      font-size: clamp(1.8rem, 4vw, 2.75rem);
+      font-weight: 700; line-height: 1.15;
+      color: var(--text); margin-bottom: 0.5rem;
+    }
+    .slide h2 {
+      font-size: clamp(1.3rem, 2.6vw, 1.75rem);
+      font-weight: 600; line-height: 1.2;
+      color: var(--text); margin-bottom: 0.5rem;
+    }
+    .slide h3 {
+      font-size: clamp(1rem, 1.8vw, 1.2rem);
+      font-weight: 600; color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .slide p {
+      font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+      color: var(--text); max-width: 70ch;
+    }
+    .slide strong { color: var(--accent-dark); font-weight: 700; }
+    .slide em { font-style: italic; color: var(--text-muted); }
+
+    /* === SLIDE 1 — Hook === */
+    .hook-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+      width: 100%;
+    }
+    @media (min-width: 900px) {
+      .hook-layout { grid-template-columns: 1.1fr 1fr; align-items: center; }
+    }
+    .chaos-docs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .doc-card {
+      border: 1.5px solid var(--border);
+      border-left: 4px solid var(--warn);
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      font-size: 0.95rem;
+    }
+    .doc-card.conflict figcaption {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--warn);
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .doc-card p { font-size: 0.95rem; color: var(--text); margin: 0; }
+    .personal-statement {
+      font-size: clamp(1.05rem, 1.9vw, 1.35rem);
+      line-height: 1.5;
+      color: var(--text);
+      border-left: 4px solid var(--accent);
+      padding: 0.5rem 0 0.5rem 1.25rem;
+      font-style: normal;
+    }
+    .personal-statement cite {
+      display: block;
+      margin-top: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: normal;
+    }
+
+    /* === SLIDE 2 — Prerequisites === */
+    .tool-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      padding: 0;
+    }
+    @media (min-width: 800px) {
+      .tool-list { grid-template-columns: repeat(2, 1fr); }
+    }
+    .tool-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.85rem 1.1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+    }
+    .tool-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.6rem;
+      height: 2.6rem;
+      border-radius: 6px;
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      font-size: 1.4rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .tool-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+    .tool-info strong {
+      font-size: 1rem;
+      color: var(--text);
+    }
+    .tool-info code {
+      font-size: 0.78rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
+    .repro-message {
+      margin-top: 0.75rem;
+      font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      background: var(--accent-light);
+      border-radius: 6px;
+      border-left: 4px solid var(--accent);
+    }
+
+    /* === SLIDE 3 — Vibe vs. Spec === */
+    .definitions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    @media (min-width: 800px) {
+      .definitions { grid-template-columns: 1fr 1fr; }
+    }
+    .definition-card {
+      padding: 1rem 1.25rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+    }
+    .definition-card h2 {
+      font-size: 1.15rem;
+      color: var(--accent-dark);
+      margin-bottom: 0.4rem;
+    }
+    .definition-card p {
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* === Vergleichstabellen === */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      margin-top: 0.5rem;
+    }
+    .compare-table th {
+      background: var(--bg);
+      color: var(--text-muted);
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 2px solid var(--border-strong);
+      font-size: 0.78em;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .compare-table td {
+      padding: 0.55rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table tr.knockout td {
+      background: var(--knockout-bg);
+      color: var(--knockout-text);
+      font-weight: 600;
+    }
+    .compare-table tr.knockout td strong { color: var(--knockout-text); }
+    .compare-table tr.knockout td:first-child { border-radius: 4px 0 0 4px; }
+    .compare-table tr.knockout td:last-child  { border-radius: 0 4px 4px 0; }
+
+    .compare-table .knockout-no  { color: var(--warn); font-weight: 600; }
+    .compare-table .knockout-yes { color: var(--accent-dark); font-weight: 700; }
+
+    /* === SLIDE 4 — BMAD-Tabelle === */
+    .bmad-compare tr.highlight-row td {
+      background: var(--warn-bg);
+      font-weight: 600;
+    }
+    .bmad-compare tr.highlight-row td:first-child  { border-radius: 4px 0 0 4px; }
+    .bmad-compare tr.highlight-row td:last-child   { border-radius: 0 4px 4px 0; }
+    .bmad-compare tr.highlight-row td.knockout-no  { color: var(--warn); }
+    .bmad-compare tr.highlight-row td.knockout-yes { color: var(--accent-dark); }
+
+    .bmad-inset {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      align-items: start;
+    }
+    @media (min-width: 800px) {
+      .bmad-inset { grid-template-columns: auto 1fr; }
+    }
+    .mary-oneliner {
+      font-size: clamp(1rem, 1.8vw, 1.2rem);
+      font-style: italic;
+      color: var(--accent-dark);
+      padding: 0.5rem 0;
+      align-self: center;
+    }
+    .punch-claim {
+      margin-top: 0.5rem;
+      font-size: clamp(0.95rem, 1.7vw, 1.1rem);
+      line-height: 1.5;
+      padding: 0.85rem 1.1rem;
+      background: var(--accent-light);
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      color: var(--text);
+    }
+
+    /* === Folder tree === */
+    .folder-tree {
+      font-family: var(--font-mono);
+      font-size: clamp(0.78rem, 1.3vw, 0.92rem);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1.1rem;
+      line-height: 1.6;
+      color: var(--text);
+      white-space: pre;
+      overflow-x: auto;
+      margin: 0;
+    }
+
+    /* === Allgemeine pre/code Blöcke === */
+    pre, code { font-family: var(--font-mono); }
+    pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1.1rem;
+      font-size: clamp(0.78rem, 1.3vw, 0.9rem);
+      overflow-x: auto;
+      line-height: 1.55;
+    }
+    code {
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+
+    /* === SLIDE 5 — Beweis === */
+    .proof-numbers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .proof-stat {
+      font-size: clamp(0.85rem, 1.4vw, 1rem);
+      font-weight: 600;
+      color: var(--accent-dark);
+      background: var(--accent-light);
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+    }
+    .side-by-side {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    @media (min-width: 800px) {
+      .side-by-side { grid-template-columns: 1fr 1fr; }
+    }
+    .side-by-side figure { display: flex; flex-direction: column; min-width: 0; }
+    .side-by-side figcaption {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+    .side-by-side pre { margin: 0; }
+    .failures {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+      margin-top: 0.75rem;
+    }
+    @media (min-width: 800px) {
+      .failures { grid-template-columns: 1fr 1fr; }
+    }
+    .failure-card {
+      border: 1.5px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      background: var(--bg);
+      font-size: clamp(0.85rem, 1.4vw, 0.95rem);
+    }
+    .failure-card h3 {
+      font-size: 0.95rem;
+      color: var(--accent-dark);
+      margin-bottom: 0.3rem;
+    }
+    .failure-card p { font-size: inherit; margin-bottom: 0.3rem; }
+    .failure-card .rescue {
+      margin-top: 0.4rem;
+      padding-top: 0.4rem;
+      border-top: 1px dashed var(--border);
+      color: var(--text);
+    }
+    .failure-card .rescue strong { color: var(--accent-dark); }
+
+    /* === SLIDE 6 — Takeaway === */
+    .stack-diagram {
+      font-family: var(--font-mono);
+      font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1.1rem;
+      line-height: 1.5;
+      white-space: pre;
+      overflow-x: auto;
+      margin: 0 auto 1rem;
+      max-width: 520px;
+      color: var(--text);
+    }
+    .sticky-takeaway {
+      font-size: clamp(1.3rem, 3vw, 2rem);
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--text);
+      max-width: 22ch;
+      text-align: center;
+      margin: 1rem auto;
+      padding: 1rem 0;
+    }
+    .setup-reminder {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+    }
+    .qr-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 1rem auto 0;
+    }
+    .qr-box {
+      width: 80px;
+      height: 80px;
+      border: 2px dashed var(--border-strong);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--bg);
+    }
+    .qr-placeholder p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    #slide-6.slide { justify-content: center; align-items: center; }
+    #slide-6 h1 { text-align: center; width: 100%; }
+
+    /* === ÜBERSICHTS-MODUS === */
+    body.overview { overflow: auto; }
+    body.overview #deck {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1.5rem;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+    body.overview .slide {
+      display: flex !important;
+      min-height: 240px;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      padding: 1rem;
+      font-size: 0.45em;
+      transition: border-color 0.15s;
+      animation: none;
+    }
+    body.overview .slide.active { border-color: var(--accent); }
+    body.overview .slide:hover  { border-color: var(--accent-dark); }
+    body.overview #slide-counter,
+    body.overview #key-hint,
+    body.overview #progress-bar { display: none; }
+
+    /* === SPEAKER-NOTES-PANEL === */
+    #notes-panel {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(15, 23, 42, 0.96);
+      color: #e2e8f0;
+      padding: 1rem 1.5rem 1.5rem;
+      font-size: 1rem;
+      line-height: 1.6;
+      max-height: 30vh;
+      overflow-y: auto;
+      z-index: 200;
+      border-top: 2px solid var(--accent);
+      backdrop-filter: blur(4px);
+    }
+    #notes-panel.visible { display: block; }
+    #notes-panel .notes-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+    }
+
+    /* === DRUCK-MODUS === */
+    @media print {
+      html, body { overflow: visible; height: auto; font-size: 12px; background: white; }
+      #progress-bar, #slide-counter, #key-hint, #notes-panel { display: none !important; }
+      #deck { display: block !important; }
+      .slide {
+        display: flex !important;
+        min-height: 100vh;
+        page-break-after: always;
+        padding: 1.5rem 2rem;
+        animation: none;
+      }
+      body.overview .slide { font-size: 1rem; height: auto; cursor: default; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress-bar" role="progressbar" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1"></div>
+  <div id="slide-counter" aria-live="polite">1 / 6</div>
+  <div id="key-hint" title="← → Navigieren · Space Weiter · ESC Übersicht · S Notizen · F Vollbild · 1–6 Springen">
+    ← → · Space · ESC · S · F
+  </div>
+
+  <div id="deck" role="main">
+
+    <!-- ============================================================
+         SLIDE 1 — Hook + Motivation
+         ============================================================ -->
+    <section class="slide" id="slide-1" data-slide="1"
+      data-speaker-notes="Stell dir vor, du bekommst vier Dokumente vom gleichen Projekt — und alle widersprechen sich. Genau das war der Startpunkt. Erzähl kurz: Du wolltest kein KI-Spielzeug bauen, sondern echtes Requirements Engineering abbilden — was hat dich dazu gebracht?">
+
+      <h1>Vier Dokumente. Vier Wahrheiten. Null Konsistenz.</h1>
+
+      <div class="hook-layout">
+        <div class="chaos-docs">
+          <figure class="doc-card conflict">
+            <figcaption>Dokument A</figcaption>
+            <p>„Upload max. 5 MB"</p>
+          </figure>
+          <figure class="doc-card conflict">
+            <figcaption>Dokument B</figcaption>
+            <p>„Upload max. 50 MB"</p>
+          </figure>
+          <figure class="doc-card conflict">
+            <figcaption>Dokument C</figcaption>
+            <p>„Echtzeit-Status"</p>
+          </figure>
+          <figure class="doc-card conflict">
+            <figcaption>Dokument D</figcaption>
+            <p>„Batch täglich"</p>
+          </figure>
+        </div>
+
+        <blockquote class="personal-statement">
+          „Ich wollte nicht einfach KI nutzen.<br>
+          Ich wollte sauberes Requirements Engineering abbilden —<br>
+          <strong>mit KI als Werkzeug, nicht als Abkürzung.</strong>"
+          <cite>— Kathrin</cite>
+        </blockquote>
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         SLIDE 2 — Prerequisites
+         ============================================================ -->
+    <section class="slide" id="slide-2" data-slide="2"
+      data-speaker-notes="Das Setup klingt nach viel, ist es aber nicht — zwanzig Minuten, alles läuft lokal auf eurem Rechner, nichts landet in der Cloud. Das Entscheidende: weil alles lokal ist, kann jede Person im Raum diesen Workflow exakt reproduzieren.">
+
+      <h1>Setup: 20 Minuten — alles lokal</h1>
+
+      <ul class="tool-list">
+        <li class="tool-item">
+          <span class="tool-icon">⬡</span>
+          <div class="tool-info">
+            <strong>Node.js</strong>
+            <code>winget install OpenJS.NodeJS</code>
+          </div>
+        </li>
+        <li class="tool-item">
+          <span class="tool-icon">◈</span>
+          <div class="tool-info">
+            <strong>Claude Code</strong>
+            <code>npm install -g @anthropic-ai/claude-code</code>
+          </div>
+        </li>
+        <li class="tool-item">
+          <span class="tool-icon">⬛</span>
+          <div class="tool-info">
+            <strong>VS Code + Claude Code Plugin</strong>
+            <code>winget install Microsoft.VisualStudioCode</code>
+          </div>
+        </li>
+        <li class="tool-item">
+          <span class="tool-icon">⎇</span>
+          <div class="tool-info">
+            <strong>Git</strong>
+            <code>winget install Git.Git</code>
+          </div>
+        </li>
+      </ul>
+
+      <p class="repro-message">
+        Alles lokal. Kein Cloud-Konto nötig. Jede Person im Raum kann diesen Workflow <strong>morgen exakt reproduzieren</strong>.
+      </p>
+
+    </section>
+
+
+    <!-- ============================================================
+         SLIDE 3 — Vibe Coding vs. Spec-Driven Development
+         ============================================================ -->
+    <section class="slide" id="slide-3" data-slide="3"
+      data-speaker-notes="Vibe Coding kennt ihr wahrscheinlich schon, auch wenn ihr es nicht so nennt — das ist, wenn man der KI sagt 'mach mal eine App' und hofft, dass was Sinnvolles rauskommt. Spec-Driven Development fängt einen Schritt früher an: erst denken, dann bauen. Schaut auf die letzte Zeile der Tabelle — die ist der Grund, warum ich diesen Weg gegangen bin.">
+
+      <h1>„Mach mal" vs. „Hier steht, was zu tun ist"</h1>
+
+      <div class="definitions">
+        <div class="definition-card">
+          <h2>Vibe Coding</h2>
+          <p>Der KI sagen <em>„mach mal"</em> — und schauen was rauskommt.<br>
+          Schnell. Witzig. Schwer nachzuvollziehen.</p>
+        </div>
+        <div class="definition-card">
+          <h2>Spec-Driven Development</h2>
+          <p>Erst Anforderungen klären, dann Code generieren.<br>
+          Langsamer am Anfang. <em>Viel</em> stabiler danach.</p>
+        </div>
+      </div>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Vibe Coding</th>
+            <th>Spec-Driven Dev</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Einstieg</td><td>sofort</td><td>bewusst</td></tr>
+          <tr><td>Ergebnis</td><td>Code der läuft</td><td>Artefakte die bleiben</td></tr>
+          <tr><td>Nachvollziehbar?</td><td class="knockout-no">nein</td><td class="knockout-yes">ja</td></tr>
+          <tr><td>Übergabe möglich?</td><td class="knockout-no">kaum</td><td class="knockout-yes">ja</td></tr>
+          <tr class="knockout">
+            <td>RE-konform?</td>
+            <td>nein</td>
+            <td><strong>ja</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+    </section>
+
+
+    <!-- ============================================================
+         SLIDE 4 — Warum nicht einfach Claude? (Mehrwert von BMAD)
+         ============================================================ -->
+    <section class="slide" id="slide-4" data-slide="4"
+      data-speaker-notes="Claude allein gibt euch einen Assistenten. Disciplined Claude gibt euch Disziplin — aber ihr müsst die Methodik selbst bauen. BMAD gibt euch eine Methodik, die jemand anderes schon ausgedacht hat. Schaut auf die rot markierte Zeile: neun Widersprüche aufgelöst — das schafft kein Prompt der Welt ohne Struktur.">
+
+      <h1>Warum nicht einfach Claude?</h1>
+
+      <table class="compare-table bmad-compare">
+        <thead>
+          <tr>
+            <th>Projektziel</th>
+            <th>Vibe Claude</th>
+            <th>Disciplined Claude</th>
+            <th>BMAD Claude</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Sauberes Requirements Engineering</td><td class="knockout-no">–</td><td>teilweise</td><td class="knockout-yes">✓</td></tr>
+          <tr><td>Lastenheft (48 IDs)</td><td class="knockout-no">–</td><td>manuell</td><td class="knockout-yes">✓</td></tr>
+          <tr class="highlight-row">
+            <td><strong>9 Widersprüche aufgelöst</strong></td>
+            <td class="knockout-no">–</td>
+            <td class="knockout-no">–</td>
+            <td class="knockout-yes"><strong>✓</strong></td>
+          </tr>
+          <tr><td>Traceability source → spec → code</td><td class="knockout-no">–</td><td class="knockout-no">–</td><td class="knockout-yes">✓</td></tr>
+          <tr><td>Reproduzierbarkeit</td><td class="knockout-no">–</td><td>teilweise</td><td class="knockout-yes">✓</td></tr>
+          <tr><td>Phasenplan</td><td class="knockout-no">–</td><td>manuell</td><td class="knockout-yes">✓</td></tr>
+        </tbody>
+      </table>
+
+      <div class="bmad-inset">
+        <pre class="folder-tree">_bmad/
+  agents/
+  skills/
+_bmad-output/
+  planning-artifacts/
+  implementation-artifacts/</pre>
+        <p class="mary-oneliner">„BMAD ist Methodik als Software."</p>
+      </div>
+
+      <p class="punch-claim">
+        Plain Claude gibt dir Code.<br>
+        Disciplined Claude gibt dir Artefakte.<br>
+        <strong>BMAD gibt dir ein System — das du nicht selbst bauen musstest.</strong>
+      </p>
+
+    </section>
+
+
+    <!-- ============================================================
+         SLIDE 5 — Der Beweis: Alpina Connect
+         ============================================================ -->
+    <section class="slide" id="slide-5" data-slide="5"
+      data-speaker-notes="Das ist nicht Theorie — das ist das echte Projekt. Links steht eine Anforderung aus dem Lastenheft, rechts der Code, der daraus entstanden ist. Und dann kommen die zwei Momente, wo fast alles schiefgelaufen wäre — was uns gerettet hat, war nicht die KI, sondern der Spec.">
+
+      <h1>Der Beweis: Alpina Connect</h1>
+
+      <div class="proof-numbers">
+        <span class="proof-stat">48 Anforderungen</span>
+        <span class="proof-stat">9 Widersprüche aufgelöst</span>
+        <span class="proof-stat">6 React-Screens</span>
+        <span class="proof-stat">~700 Zeilen Code</span>
+      </div>
+
+      <div class="side-by-side">
+        <figure class="spec-side">
+          <figcaption>Lastenheft</figcaption>
+          <pre><code>FA-12: Dateivalidierung
+Maximale Dateigröße: 10 MB
+Erlaubte Formate: PDF, JPEG
+Fehlermeldung bei Verstoß:
+  „Datei überschreitet 10 MB."</code></pre>
+        </figure>
+        <figure class="code-side">
+          <figcaption>React-Komponente</figcaption>
+          <pre><code>// FA-12: Dateivalidierung max. 10 MB
+const MAX_SIZE = 10 * 1024 * 1024;
+
+function validateFile(file) {
+  if (file.size > MAX_SIZE) {
+    return "Datei überschreitet 10 MB.";
+  }
+  // FA-12: nur PDF und JPEG
+  const allowed = ["application/pdf",
+                   "image/jpeg"];
+  if (!allowed.includes(file.type)) {
+    return "Ungültiges Dateiformat.";
+  }
+  return null;
+}</code></pre>
+        </figure>
+      </div>
+
+      <div class="failures">
+        <div class="failure-card">
+          <h3>Failure 1 — Kontextverlust</h3>
+          <p>Claude vergisst den Projektzustand nach längeren Konversationen.</p>
+          <p class="rescue"><strong>Gerettet durch:</strong> BMAD-Artefakte eingecheckt → Kontext in 2 Minuten wiederhergestellt.</p>
+        </div>
+        <div class="failure-card">
+          <h3>Failure 2 — Scope Creep</h3>
+          <p>Ein Agent baute Feature X, das Feature Y widersprach.</p>
+          <p class="rescue"><strong>Gerettet durch:</strong> PRD als eine Quelle der Wahrheit → Konflikt sofort sichtbar.</p>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================
+         SLIDE 6 — Takeaway
+         ============================================================ -->
+    <section class="slide" id="slide-6" data-slide="6"
+      data-speaker-notes="Das ist der eine Satz, den ihr mitnehmen sollt — lest ihn einmal laut. Spec-Driven Development ist kein Aufwand für die KI. Es ist ein Versprechen an euch selbst: dass ihr morgen noch wisst, was ihr heute entschieden habt. Und falls ihr anfangen wollt — der QR-Code führt direkt zur Dokumentation.">
+
+      <h1>Was bleibt</h1>
+
+      <pre class="stack-diagram">┌─────────────────────────────────────┐
+│   Du — mit natürlicher Sprache      │
+└──────────────────┬──────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│       Claude Code + BMAD            │
+└──────────────────┬──────────────────┘
+                   ↓
+┌─────────────────────────────────────┐
+│  Strukturierter Output:             │
+│  Spec · Code · Docs                 │
+└─────────────────────────────────────┘</pre>
+
+      <p class="sticky-takeaway">
+        „Spec-driven development ist nicht für KI.<br>
+        Es ist für dich —<br>
+        damit du morgen weißt, was du heute entschieden hast."
+      </p>
+
+      <p class="setup-reminder">
+        Setup: Node.js · Claude Code · VS Code + Plugin · Git — alles lokal
+      </p>
+
+      <div class="qr-placeholder" aria-label="QR-Code zu BMAD und Claude Code Dokumentation">
+        <div class="qr-box">[QR]</div>
+        <p>BMAD · Claude Code Docs</p>
+      </div>
+
+    </section>
+
+  </div><!-- /#deck -->
+
+  <div id="notes-panel" role="complementary" aria-label="Moderationsnotizen">
+    <div class="notes-label">Moderationsnotizen</div>
+    <div class="notes-text" id="notes-text"></div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const TOTAL = 6;
+      let current = 1;
+      let notesVisible = false;
+      let overviewMode = false;
+
+      function slide(n) { return document.querySelector('.slide[data-slide="' + n + '"]'); }
+      function allSlides() { return document.querySelectorAll('.slide'); }
+
+      function goTo(n, skipAnim) {
+        if (n < 1 || n > TOTAL) return;
+        const prev = slide(current);
+        if (prev) prev.classList.remove('active');
+        current = n;
+        const next = slide(current);
+        if (!next) return;
+        if (skipAnim) {
+          next.style.animation = 'none';
+          requestAnimationFrame(function () { next.style.animation = ''; });
+        }
+        next.classList.add('active');
+
+        const bar = document.getElementById('progress-bar');
+        bar.style.width = ((current / TOTAL) * 100) + '%';
+        bar.setAttribute('aria-valuenow', current);
+        document.getElementById('slide-counter').textContent = current + ' / ' + TOTAL;
+        updateNotes();
+      }
+
+      function next() { goTo(current + 1); }
+      function prev() { goTo(current - 1); }
+
+      function updateNotes() {
+        const s = slide(current);
+        const text = s ? (s.dataset.speakerNotes || '') : '';
+        document.getElementById('notes-text').textContent = text;
+      }
+
+      function toggleNotes() {
+        notesVisible = !notesVisible;
+        document.getElementById('notes-panel').classList.toggle('visible', notesVisible);
+        if (notesVisible) updateNotes();
+      }
+
+      function toggleOverview() {
+        overviewMode = !overviewMode;
+        document.body.classList.toggle('overview', overviewMode);
+        if (overviewMode) {
+          allSlides().forEach(function (s) { s.addEventListener('click', onOverviewClick); });
+        } else {
+          allSlides().forEach(function (s) { s.removeEventListener('click', onOverviewClick); });
+          goTo(current, true);
+        }
+      }
+
+      function onOverviewClick(e) {
+        const num = parseInt(e.currentTarget.dataset.slide, 10);
+        if (num) {
+          overviewMode = false;
+          document.body.classList.remove('overview');
+          allSlides().forEach(function (s) { s.removeEventListener('click', onOverviewClick); });
+          goTo(num, true);
+        }
+      }
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function () {});
+        } else {
+          document.exitFullscreen().catch(function () {});
+        }
+      }
+
+      document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        switch (e.key) {
+          case 'ArrowRight':
+          case 'ArrowDown':
+          case ' ':
+            e.preventDefault();
+            if (!overviewMode) next();
+            break;
+          case 'ArrowLeft':
+          case 'ArrowUp':
+            e.preventDefault();
+            if (!overviewMode) prev();
+            break;
+          case 'Escape':
+            e.preventDefault();
+            toggleOverview();
+            break;
+          case 's':
+          case 'S':
+            if (!overviewMode) toggleNotes();
+            break;
+          case 'f':
+          case 'F':
+            toggleFullscreen();
+            break;
+          case '1': case '2': case '3':
+          case '4': case '5': case '6':
+            if (!overviewMode) goTo(parseInt(e.key, 10), false);
+            break;
+        }
+      });
+
+      let touchStartX = 0, touchStartY = 0;
+      document.addEventListener('touchstart', function (e) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+      document.addEventListener('touchend', function (e) {
+        if (overviewMode) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+          if (dx < 0) next(); else prev();
+        }
+      }, { passive: true });
+
+      function init() { goTo(1, true); }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+
+</body>
+</html>
