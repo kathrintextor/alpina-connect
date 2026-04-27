@@ -1,0 +1,23 @@
+name: Commit-Format prüfen
+
+# Prüft bei jedem Pull Request ob Commit-Messages dem Conventional-Commits-Format entsprechen
+on:
+  pull_request:
+    branches:
+      - master
+      - dev
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Conventional Commits prüfen
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: '.commitlintrc.json'
