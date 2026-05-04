@@ -127,28 +127,57 @@ _Quellen: Docuwriter, ScreenApp, MermaidChart Docs, Eraser.io, Miro, GitMind, Cl
 
 ---
 
-## Toolempfehlung: Miro
+## Toolempfehlung: Draw.io ✅
+
+> **Hinweis:** Die initiale Empfehlung lautete Miro (Score 4.05). Nach einem Multi-Agenten-Roundtable (Winston/Architekt, John/PM, Mary/Analyst) wurde die Empfehlung revidiert. Die Nutzwertanalyse-Methode war korrekt — die Gewichtungen waren für den Lehrkontext falsch kalibriert. Dokumentiert als Nachweis des GenAI-gestützten Entscheidungsprozesses.
 
 ### Begründete Wahl
 
-**Miro** erzielt mit **4.05 von 5.00 Punkten** den höchsten Gesamtscore und wird als primäres UML-Tool für Alpina Connect empfohlen.
+**Draw.io (diagrams.net)** wird als primäres UML-Tool für den RE-Kurskontext empfohlen.
 
 **Stärken:**
-- Beste Benutzerfreundlichkeit der Vergleichsgruppe — intuitiv für Laien ohne Einarbeitung
-- Solide GenAI-Unterstützung: Text-zu-UML-Diagramm direkt im Tool (10 AI-Credits/Monat gratis)
-- Stärkste Kollaborationsfunktionen: Echtzeit-Bearbeitung, Kommentare, 160+ App-Integrationen
-- Vorlagen für Use-Case-, Klassen- und Sequenzdiagramme vorhanden
+- Vollständig kostenlos — keine AI-Credit-Limits, keine Freemium-Schranken
+- UML-konformes Arbeiten durch strukturierte UML-Vorlagen (kein "UML-ähnlich" wie Miro)
+- Alle 8 UML-Diagrammtypen verfügbar (Use Case, Klasse, Sequenz, Aktivität, Status, Komponente, Deployment, Objekt)
+- Export als XML/SVG — portabel, versionierbar, Git-kompatibel
+- Kollaboration via Google Drive / OneDrive / Confluence
 
-**Einschränkung:**
-- 10 AI-generierte Diagramme pro Monat im Free Tier — für Kurszwecke ausreichend
+**Warum nicht Miro (trotz höherem Score):**
+- Miro erzeugt UML-*ähnliche*, aber keine validen UML-Diagramme — kein Lerneffekt für korrekte Notation
+- 10 AI-Credits/Monat untergraben das meistgewichtete Kriterium (GenAI) nach wenigen Diagrammen
+- Mermaid-Code nicht nativ importierbar → Hybrid-Ansatz bricht an der Schnittstelle
+- Für RE-Lehre gilt: UML-Konformität > Benutzerfreundlichkeit
 
-### Empfohlene Kombination (optional)
+### Empfohlene Hybrid-Strategie
 
-Für maximalen Nutzen empfiehlt sich eine **Hybrid-Strategie**:
-1. **Claude.ai** → Diagramme per natürlichsprachlicher Beschreibung als Mermaid-Code generieren (auf Deutsch)
-2. **Miro** → Generierten Code importieren, visuell nachbearbeiten, kollaborativ teilen
+Für maximalen Lerneffekt mit GenAI-Unterstützung:
 
-Diese Kombination maximiert GenAI-Qualität (Claude) und Benutzerfreundlichkeit/Kollaboration (Miro).
+1. **Claude.ai** → Diagramm per natürlichsprachlicher Beschreibung auf Deutsch generieren → Ausgabe als Mermaid-Code
+2. **Draw.io** → Mermaid-Code importieren (nativ unterstützt), visuell nachbearbeiten, exportieren
+
+**Vorteile dieser Kombination:**
+- Claude übernimmt die Erstentwurf-Generierung (GenAI-Stärke)
+- Draw.io liefert valide UML-Notation und freien Export
+- Kein proprietäres Format, keine Credit-Limits
+- Workflow versionierbar (Mermaid-Code als Text in Git speicherbar)
+
+### Miro bleibt relevant — aber anders
+
+Miro eignet sich weiterhin für:
+- Stakeholder-Workshops und kollaborative Anforderungserfassung
+- Präsentationen und visuelle Kommunikation
+- Brainstorming vor der formalen UML-Modellierung
+
+---
+
+## Revisionsverlauf der Empfehlung
+
+| Version | Empfehlung | Begründung |
+|---|---|---|
+| v1 (Mary, Nutzwertanalyse) | Miro (4.05/5.00) | Höchster gewichteter Score |
+| v2 (nach Roundtable) | **Draw.io** | UML-Konformität im Lehrkontext > Score; Hybrid-Pipeline-Problem; AI-Limit hebelt GenAI-Kriterium aus |
+
+**Methodische Korrektur:** "Einschränkungen" hätte im Lehrkontext höher gewichtet werden müssen (empfohlen: 15% statt 5%), da Limits direkt die primären Bewertungskriterien untergraben.
 
 ---
 
@@ -161,9 +190,10 @@ Diese Kombination maximiert GenAI-Qualität (Claude) und Benutzerfreundlichkeit/
 | Marktrecherche | Claude Code + BMAD (Mary) | Parallele Web-Suche nach Tool-Features, Nutzerverhalten, Vergleichsdaten |
 | Kriteriengewichtung | Claude Code (John/PM-Perspektive) | Gewichtungsvorschlag basierend auf Zielgruppe und Aufgabenstellung |
 | Nutzwertanalyse | Claude Code | Scoring-Matrix und Gesamtberechnung |
-| Entscheidungsbegründung | BMAD Party-Mode (Mary + John + Winston) | Multi-Agenten-Roundtable zur Validierung der Toolwahl |
+| Entscheidungsbegründung | BMAD Party-Mode (Mary + John + Winston) | Multi-Agenten-Roundtable zur Validierung — führte zur Revision der Empfehlung |
+| Empfehlung revidiert | BMAD Party-Mode Ergebnis | Winston: Hybrid-Pipeline-Problem + UML-Semantik; John: Methodikfehler Gewichtung; Mary: Konzession + neue Empfehlung Draw.io |
 
-**Wichtige Erkenntnis:** GenAI wurde für Recherche, Strukturierung und Analyse eingesetzt — die Bewertungslogik und Gewichtung basiert auf den Anforderungen der Aufgabenstellung und Zielgruppe. Die finale Entscheidung liegt beim Menschen.
+**Wichtige Erkenntnis:** GenAI wurde für Recherche, Strukturierung, Analyse *und kritische Revision* eingesetzt. Der Roundtable hat eine Schwäche in der initialen Nutzwertanalyse aufgedeckt und zu einer fundierteren Entscheidung geführt. Das ist der Kernwert von Multi-Agenten-KI: nicht nur Bestätigung, sondern echte Herausforderung der eigenen Ergebnisse.
 
 ---
 
